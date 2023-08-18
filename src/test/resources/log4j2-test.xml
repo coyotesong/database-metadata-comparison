@@ -1,0 +1,16 @@
+<Configuration debug="true">
+    <Filter type="ThresholdFilter" level="trace"/>
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %p [%t] %C{1.} %x - %m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name=" org.postgresql.pljava" level="warn">
+        </Logger>
+
+        <Root level="info">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+    </Loggers>
+</Configuration>
