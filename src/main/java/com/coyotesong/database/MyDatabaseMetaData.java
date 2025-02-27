@@ -1,51 +1,60 @@
 package com.coyotesong.database;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.sql.*;
 import java.util.*;
 
+/**
+ * Parsed database metadata
+ * <p>
+ * Proper testing of this class would probably require {@code Proxy<DatabaseMetaData>} or
+ * adding a hefty additional dependency.
+ */
 public class MyDatabaseMetaData {
     private static final Logger LOG = LoggerFactory.getLogger(MyDatabaseMetaData.class);
 
+    private final Database database;
     private Properties clientInfo;
-    private final HashMap<String, Object> properties = new LinkedHashMap<>();
+    private final Map<String, Object> properties = new LinkedHashMap<>();
+    private final CatalogSchemaSupport catalogSchemaSupport = new CatalogSchemaSupport();
+
     private String databaseProductName;
     private String databaseProductVersion;
+    private int databaseMajorVersion;
     private String driverName;
     private String driverVersion;
     private String driverClassName;
     private String dockerImageName;
-/*
-        this.numericFunctions = md.getNumericFunctions();
-        this.SQLKeywords = md.getSQLKeywords();
-        this.stringFunctions = md.getStringFunctions();
-        this.systemFunctions = md.getSystemFunctions();
-        this.timeDateFunctions = md.getTimeDateFunctions(); */
+    private String jdbcUrl;
 
-    private String numericFunctions;
-    private String sqlKeywords;
-    private String stringFunctions;
-    private String systemFunctions;
-    private String timeDateFunctions;
+    private List<String> numericFunctions;
+    private List<String> sqlKeywords;
+    private List<String> stringFunctions;
+    private List<String> systemFunctions;
+    private List<String> temporalFunctions;
 
-    public MyDatabaseMetaData() {
+    private NullSortPosition nullSortPosition = NullSortPosition.UNKNOWN;
+    private SQLGrammar sqlGrammar = SQLGrammar.UNKNOWN;
+    private IdentifierStorage identifierStorage = IdentifierStorage.UNKNOWN;
+    private IdentifierStorage quotedIdentifierStorage = IdentifierStorage.UNKNOWN;
 
+    public MyDatabaseMetaData(Database database) {
+        this.database = database;
     }
 
-    public MyDatabaseMetaData(String driverClassName) {
+    public MyDatabaseMetaData(Database database, String driverClassName) {
+        this(database);
         this.driverClassName = driverClassName;
     }
 
-    void put(String key, Object value) {
-        properties.put(key, value);
+    public Database getDatabase() {
+        return database;
     }
 
     public String getDatabaseProductName() {
@@ -54,6 +63,10 @@ public class MyDatabaseMetaData {
 
     public String getDatabaseProductVersion() {
         return databaseProductVersion;
+    }
+
+    public int getDatabaseMajorVersion() {
+        return databaseMajorVersion;
     }
 
     public String getDriverName() {
@@ -68,62 +81,178 @@ public class MyDatabaseMetaData {
         return driverClassName;
     }
 
+    public void setDriverClassName(String driverClassName) {
+        this.driverClassName = driverClassName;
+    }
+
+    public String getJdbcUrl() {
+        return jdbcUrl;
+    }
+
+    public void setJdbcUrl(String jdbcUrl) {
+        this.jdbcUrl = jdbcUrl;
+    }
+
     public String getDockerImageName() {
         return dockerImageName;
     }
 
-    public String getNumericFunctions() {
-        return numericFunctions;
+    public void setDockerImageName(String dockerImageName) {
+        this.dockerImageName = dockerImageName;
     }
 
-    public String getSQLKeywords() {
-        return sqlKeywords;
+    public IdentifierStorage getIdentifierStorage() {
+        return identifierStorage;
     }
 
-    public String getStringFunctions() {
-        return stringFunctions;
+    public void setIdentifierStorage(IdentifierStorage identifierStorage) {
+        this.identifierStorage = identifierStorage;
     }
 
-    public String getSystemFunctions() {
+    public IdentifierStorage getQuotedIdentifierStorage() {
+        return quotedIdentifierStorage;
+    }
+
+    public void setQuotedIdentifierStorage(IdentifierStorage quotedIdentifierStorage) {
+        this.quotedIdentifierStorage = quotedIdentifierStorage;
+    }
+
+    public NullSortPosition getNullSortPosition() {
+        return nullSortPosition;
+    }
+
+    public void setNullSortPosition(NullSortPosition nullSortPosition) {
+        this.nullSortPosition = nullSortPosition;
+    }
+
+    public SQLGrammar getSqlGrammar() {
+        return sqlGrammar;
+    }
+
+    public void setSqlGrammar(SQLGrammar sqlGrammar) {
+        this.sqlGrammar = sqlGrammar;
+    }
+
+    public CatalogSchemaSupport getCatalogSchemaSupport() {
+        return catalogSchemaSupport;
+    }
+
+    public List<String> getTemporalFunctions() {
+        return temporalFunctions;
+    }
+
+    public void setTemporalFunctions(List<String> temporalFunctions) {
+        this.temporalFunctions = temporalFunctions;
+    }
+
+    public List<String> getSystemFunctions() {
         return systemFunctions;
     }
 
-    public String getTimeDateFunctions() {
-        return timeDateFunctions;
+    public void setSystemFunctions(List<String> systemFunctions) {
+        this.systemFunctions = systemFunctions;
+    }
+
+    public List<String> getStringFunctions() {
+        return stringFunctions;
+    }
+
+    public void setStringFunctions(List<String> stringFunctions) {
+        this.stringFunctions = stringFunctions;
+    }
+
+    public List<String> getSqlKeywords() {
+        return sqlKeywords;
+    }
+
+    public void setSqlKeywords(List<String> sqlKeywords) {
+        this.sqlKeywords = sqlKeywords;
+    }
+
+    public List<String> getNumericFunctions() {
+        return numericFunctions;
+    }
+
+    public void setNumericFunctions(List<String> numericFunctions) {
+        this.numericFunctions = numericFunctions;
     }
 
     public boolean containsKey(String key) {
         return properties.containsKey(key);
     }
 
-    public Object get(String key) {
-        return properties.get(key);
-    }
-
     public Set<String> keySet() {
         return properties.keySet();
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> T get(String key) {
+        return (T) properties.get(key);
+    }
+
     private void put(Method m, DatabaseMetaData md) {
+        properties.put(m.getName(), invoke(m, md));
+    }
+    
+    private void put(Method m, Object obj) {
+        properties.put(m.getName(), obj);
+    }
+
+    private <T> T invoke(Method m, DatabaseMetaData md) {
         try {
-            put(m.getName(), m.invoke(md));
+            return (T) m.invoke(md);
         } catch (InvocationTargetException e) {
             if (e.getCause() != null) {
-                if (SQLFeatureNotSupportedException.class.isAssignableFrom(e.getCause().getClass())) {
-                    LOG.info(e.getCause().getMessage());
-                    put(m.getName(), e.getCause());
+                final Throwable cause = e.getCause();
+                String url = null;
+                try {
+                    url = md.getDatabaseProductName();
+                } catch (SQLException sqle) {
+                    LOG.warn("{}: {}", sqle.getClass().getName(), sqle.getMessage());
+                }
+
+                if (SQLFeatureNotSupportedException.class.isAssignableFrom(cause.getClass())) {
+                    LOG.warn("{}: {}: {}", cause.getClass().getName(), m.getName(), cause.getMessage());
+                    put(m, "not supported");
+                } else if (SQLException.class.isAssignableFrom(cause.getClass())) {
+                    LOG.warn("{}: {}: {}", cause.getClass().getName(), m.getName(), cause.getMessage());
+                    put(m, cause);
+                } else if (NullPointerException.class.isAssignableFrom(cause.getClass())) {
+                    LOG.warn("{} when calling '{}.{}': {}", e.getClass().getSimpleName(), url, m.getName(), cause.getMessage(), e);
+                    put(m, cause);
+                } else if (IllegalMonitorStateException.class.isAssignableFrom(cause.getClass())) {
+                    LOG.warn("{} when calling '{}.{}': {}", e.getClass().getSimpleName(), url, m.getName(), cause.getMessage(), e);
+                    put(m, cause);
                 } else {
-                    LOG.info("unexpected exception on {}", m.getName(), e.getCause());
-                    put(m.getName(), e.getCause());
+                    LOG.warn("{}: {}: {}", cause.getClass().getName(), m.getName(), cause.getMessage(), cause);
+                    put(m, cause);
                 }
             } else {
                 LOG.info("unexpected exception on {}", m.getName(), e);
-                put(m.getName(), e);
+                put(m, e);
             }
         } catch (IllegalAccessException e) {
-            LOG.info("unexpected exception on {}", m.getName(), e);
-            put(m.getName(), e);
+            LOG.warn("Unable to access {}#{}: {}", m.getDeclaringClass().getName(), m.getName(), e.getMessage());
+            put(m, e);
         }
+
+        return null;
+    }
+
+    public String getCatalogTerm() {
+        final String value = (String) get("getCatalogTerm");
+        if (StringUtils.isBlank(value)) {
+            return "_";
+        }
+        return value;
+    }
+
+    public String getSchemaTerm() {
+        final String value = (String) get("getSchemaTerm");
+        if (StringUtils.isBlank(value)) {
+            return "_";
+        }
+        return value;
     }
 
     /**
@@ -137,138 +266,84 @@ public class MyDatabaseMetaData {
         this.clientInfo = conn.getClientInfo();
 
         final DatabaseMetaData md = conn.getMetaData();
+        MetadataMethods.INSTANCE.add(md);
+
         this.databaseProductName = md.getDatabaseProductName().replace("\n", " ");
         this.databaseProductVersion = md.getDatabaseProductVersion().replace("\n", " ");
+        this.databaseMajorVersion = md.getDatabaseMajorVersion();
         this.driverName = md.getDriverName();
-        this.driverVersion = md.getDriverVersion();
+
+        // see org.h2:  2.2.220 (2023-07-04)
+        String driverVersion = md.getDriverVersion();
+        if (driverVersion.indexOf(" ") > 0) {
+            this.driverVersion = driverVersion.substring(0, driverVersion.indexOf(" "));
+        } else {
+            this.driverVersion = driverVersion;
+        }
 
         int idx = this.driverVersion.indexOf(" (Revision: ");
         if (idx > 0) {
             this.driverVersion = this.driverVersion.substring(0, idx);
         }
 
-        this.numericFunctions = md.getNumericFunctions();
-        //Arrays.stream(db2.getSQLKeywords().split(",")).map(String::trim).map(String::toUpperCase).collect(Collectors.toList());
-        this.sqlKeywords = md.getSQLKeywords();
-        this.stringFunctions = md.getStringFunctions();
-        this.systemFunctions = md.getSystemFunctions();
-        this.timeDateFunctions = md.getTimeDateFunctions();
+        this.jdbcUrl = md.getURL();
 
-        switch (md.getDefaultTransactionIsolation()) {
-            case Connection.TRANSACTION_NONE:
-                put("getDefaultTransactionIsolation", "NONE");
-                break;
-            case Connection.TRANSACTION_READ_COMMITTED:
-                put("getDefaultTransactionIsolation", "READ_COMMITTED");
-                break;
-            case Connection.TRANSACTION_READ_UNCOMMITTED:
-                put("getDefaultTransactionIsolation", "READ_UNCOMMITTED");
-                break;
-            case Connection.TRANSACTION_REPEATABLE_READ:
-                put("getDefaultTransactionIsolation", "REPEATABLE_READ");
-                break;
-            case Connection.TRANSACTION_SERIALIZABLE:
-                put("getDefaultTransactionIsolation", "SERIALIZABLE");
-                break;
-            default:
-                put("getDefaultTransactionIsolation", md.getDefaultTransactionIsolation());
-        }
+        this.numericFunctions = new ArrayList(Arrays.stream(md.getNumericFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        Collections.sort(this.numericFunctions);
 
-        switch (md.getResultSetHoldability()) {
-            case ResultSet.HOLD_CURSORS_OVER_COMMIT:
-                put("getResultSetHoldability", "HOLD_CURSORS_OVER_COMMIT");
-                break;
-            case ResultSet.CLOSE_CURSORS_AT_COMMIT:
-                put("getResultSetHoldability", "CLOSE_CURSORS_AT_COMMIT");
-                break;
-            default:
-                put("getResultSetHoldability", md.getResultSetHoldability());
-        }
+        this.sqlKeywords = new ArrayList(Arrays.stream(md.getSQLKeywords().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        Collections.sort(this.sqlKeywords);
 
-        final int sst = md.getSQLStateType();
-        if (DatabaseMetaData.sqlStateSQL == sst) {
-            put("getSQLStateType", "SQL");
-        } else if (DatabaseMetaData.sqlStateXOpen == sst) {
-            put("getSQLStateType", "X/Open");
-        } else {
-            put("getSQLStateType", sst);
-        }
+        this.stringFunctions = new ArrayList(Arrays.stream(md.getStringFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        Collections.sort(this.stringFunctions);
 
-        //final Class<? extends DatabaseMetaData> clz = md.getClass();
-        //final Method[] methods = clz.getMethods();
-        final Method[] methods = DatabaseMetaData.class.getMethods();
+        this.systemFunctions = new ArrayList(Arrays.stream(md.getSystemFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        Collections.sort(this.systemFunctions);
 
-        final List<Method> methodList = new ArrayList<>(Arrays.asList(methods));
-        methodList.sort((p, q) -> p.getName().compareTo(q.getName()));
+        this.temporalFunctions = new ArrayList(Arrays.stream(md.getTimeDateFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        Collections.sort(this.temporalFunctions);
+
+        // put("getDefaultTransactionIsolation", getDefaultTransactionIsolation(md));
+        // put("getResultSetHoldability", getResultSetHoldability(md));
+        // put("getSQLStateType", getSQLStateType(md));
+
+        this.nullSortPosition = NullSortPosition.valueOf(md);
+        this.sqlGrammar = SQLGrammar.valueOf(md);
+        this.identifierStorage = IdentifierStorage.valueOf(md);
+        this.quotedIdentifierStorage = IdentifierStorage.quotedValueOf(md);
+
+        final Class<? extends DatabaseMetaData> clz = md.getClass();
+        final Method[] methods = clz.getMethods();
+        // final Method[] methods = DatabaseMetaData.class.getMethods();
+
+        // implementation note: we can't test for Void.class due to multiple classloaders
+        final List<Method> methodList = Arrays.stream(methods)
+                .filter(m -> m.getParameterCount() == 0)
+                .filter(m -> !"void".equals(m.getReturnType().getName()))
+                .filter(m -> !MetadataMethods.IGNORE_LIST.contains(m.getName()))
+                .sorted((p, q) -> p.getName().compareTo(q.getName()))
+                .toList();
 
         for (Method m : methodList) {
-            final Class<?> returnType = m.getReturnType();
-            if ((Void.class.equals(returnType) || m.getParameterCount() > 0)) {
-                continue;
-            }
 
-            final String key = m.getName();
-
-            // if ("unwrap".equals(m.getName())) {
-            //     continue;
-            // }
-
-            if (ResultSet.class.equals(returnType)) {
-                switch (key) {
-                    case "getCatalogs":     // TABLE_CAT (string)
-                    case "getTableTypes":   // TABLE_TYPE (string) (TABLE, VIEW, etc.)
-                    case "getTypeInfo":     // TYPE_NAME, DATA_TYPE, PRECISION, ....
-                        LOG.info("extraction not implemented yet: ({})", key);
-                        break;
-                    case "getSchemas":      // requires 'catalog'
-                    case "getClientInfoProperties":
-                        // will not implement
-                        break;
-                    default:
-                        LOG.info("unexpected method: ({})", key);
-                }
-                // getFunctions(catalog, schemaPattern, functionMamePattern)
-                // getProcedures(catalog, schemaPattern, procedureNamePattern);
-                // getUDTs(catalog, schemaPattern, typeNamePattern, int[] types)
+            final String name = m.getName();
+            if (MetadataMethods.INSTANCE.isSupportCatalogSchemaMethod(name)) {
+                catalogSchemaSupport.setValue(m, md);
             } else {
-                switch (key) {
-                    case "getConnection":
-                    case "getURL":
-                    case "getUserName":
-                    case "isReadOnly":
-                        // ignore entirely
-                        break;
+                put(m, md);
+            }
+        }
 
-                    case "getDatabaseMajorVersion":
-                    case "getDatabaseMinorVersion":
-                    case "getDatabaseProductName":
-                    case "getDatabaseProductVersion":
-                    case "getDriverMajorVersion":
-                    case "getDriverMinorVersion":
-                    case "getDriverName":
-                    case "getDriverVersion":
-                        // captured above
-                        break;
-
-                    case "getJDBCMajorVersion":
-                    case "getJDBCMinorVersion":
-                        // do we want to capture this?
-                        break;
-
-                    case "getNumericFunctions":
-                    case "getSQLKeywords":
-                    case "getStringFunctions":
-                    case "getSystemFunctions":
-                    case "getTimeDateFunctions":
-                    case "getDefaultTransactionIsolation":
-                    case "getResultSetHoldability":
-                    case "getSQLStateType":
-                        // captured above
-                        break;
-
-                    default:
-                        put(m, md);
+        // small tweak for clarity
+        if (properties.containsKey("getExtraNameCharacters")) {
+            String value = (String) properties.get("getExtraNameCharacters");
+            if (!value.isBlank()) {
+                List<String> chars = new ArrayList(value.length());
+                for (int i = 0; i < value.length(); i++) {
+                    chars.add(Character.toString(value.charAt(i)));
                 }
+                Collections.sort(chars);
+                properties.put("getExtraNameCharacters", "'" + String.join("', '", chars) + "'");
             }
         }
 
@@ -278,53 +353,87 @@ public class MyDatabaseMetaData {
         //   ? updatesAreDetected(int type)
         //   ? others*AreVisible(int type)
         //   ? own*AreVisible(int type)
+
+
+        StringBuilder sb = new StringBuilder();
+        this.sqlKeywords.forEach(k -> sb.append("\n  - " + k));
+        // LOG.info("SQL Keywords for '{}': {}\n", conn.getSchema(), sb.toString());
+
     }
 
-    static private <S extends JdbcDatabaseContainer<?>> MyDatabaseMetaData capture(Database dbe, S db) throws SQLException {
-        final MyDatabaseMetaData results = new MyDatabaseMetaData();
-        for (String env : dbe.getEnv()) {
-            final String[] s = env.split("=");
-            db.addEnv(s[0], s[1]);
-        }
-
-        db.start();
-        results.driverClassName = db.getDriverClassName();
-        results.dockerImageName = db.getDockerImageName();
-        try (Connection conn = db.createConnection("")) {
-            results.loadMetadata(conn);
-            return results;
-        }
-    }
-
-    static <S extends JdbcDatabaseContainer<?>> MyDatabaseMetaData getMetadataFor(@NotNull Database dbe) throws SQLException {
-        Constructor<S> ctor = null;
+    /**
+     * Get default transaction isolation
+     *
+     * @param md
+     * @return
+     */
+    String getDefaultTransactionIsolation(DatabaseMetaData md) {
+        final List<String> flags = new ArrayList<>();
         try {
-            if (dbe.getImageName() == null) {
-                ctor = (Constructor<S>) dbe.getContainerClass().getConstructor();
-            } else {
-                ctor = (Constructor<S>) dbe.getContainerClass().getConstructor(DockerImageName.class);
+            final int bits = md.getDefaultTransactionIsolation();
+
+            if ((bits & Connection.TRANSACTION_READ_UNCOMMITTED) == Connection.TRANSACTION_READ_UNCOMMITTED) {
+                flags.add("UNCOMMITTED");
             }
-        } catch (NoSuchMethodException e) {
-            LOG.info("unable to create container for {}: {}", ctor.getClass().getSimpleName(), e.getMessage(), e);
-            throw new SQLException("unable to find constructor");
+
+            if ((bits & Connection.TRANSACTION_READ_COMMITTED) == Connection.TRANSACTION_READ_COMMITTED) {
+                flags.add("COMMITTED");
+            }
+
+            if ((bits & Connection.TRANSACTION_REPEATABLE_READ) == Connection.TRANSACTION_REPEATABLE_READ) {
+                flags.add("REPEATABLE");
+            }
+
+            if ((bits & Connection.TRANSACTION_SERIALIZABLE) == Connection.TRANSACTION_SERIALIZABLE) {
+                flags.add("REPEATABLE");
+            }
+        } catch (SQLException e) {
+            LOG.info("{}: {}", e.getClass().getName(), e.getMessage(), e);
+            return null;
         }
 
-        if (dbe.getImageName() == null) {
-            try (S db = ctor.newInstance()) {
-                return capture(dbe, db);
-            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
-                     InvocationTargetException e) {
-                LOG.info("unable to create container for {}: {}", ctor.getClass().getSimpleName(), e.getMessage(), e);
-                throw new SQLException("unable to create container");
+        if (flags.isEmpty()) {
+            flags.add("NONE");
+        }
+
+        return String.join(", ", flags);
+    }
+
+    String getResultSetHoldability(DatabaseMetaData md) {
+        try {
+            int holdability = md.getResultSetHoldability();
+            switch (holdability) {
+                case 0:
+                    return null;
+                case ResultSet.HOLD_CURSORS_OVER_COMMIT:
+                    return "HOLD_CURSORS_OVER_COMMIT";
+                case ResultSet.CLOSE_CURSORS_AT_COMMIT:
+                    return "CLOSE_CURSORS_AT_COMMIT";
+                default:
+                    return "n/a";
             }
-        } else {
-            try (S db = ctor.newInstance(dbe.getImageName())) {
-                return capture(dbe, db);
-            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
-                     InvocationTargetException e) {
-                LOG.info("unable to create container for {}: {}", ctor.getClass().getSimpleName(), e.getMessage(), e);
-                throw new SQLException("unable to create container");
+        } catch (SQLException e) {
+            LOG.info("{}: {}", e.getClass().getName(), e.getMessage(), e);
+            return null;
+        }
+    }
+
+    String getSQLStateType(DatabaseMetaData md) {
+        try {
+            final int type = md.getSQLStateType();
+            switch (type) {
+                case DatabaseMetaData.sqlStateSQL:
+                    return "SQL";
+                case DatabaseMetaData.sqlStateXOpen:
+                    return "X/Open";
+                case 0:
+                    return null;
+                default:
+                    return "[ " + Integer.toString(type) + " ]";
             }
+        } catch (SQLException e) {
+            LOG.info("{}: {}", e.getClass().getName(), e.getMessage(), e);
+            return null;
         }
     }
 }

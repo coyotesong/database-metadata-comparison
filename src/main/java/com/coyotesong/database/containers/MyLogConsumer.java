@@ -1,4 +1,4 @@
-package com.coyotesong.database;
+package com.coyotesong.database.containers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
