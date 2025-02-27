@@ -88,7 +88,7 @@ public class MarkdownFormatter extends AbstractOutputFormatter {
         final StringBuilder sb = new StringBuilder();
 
         sb.append("| Name | Version | Full Tablename | Procedure Term | Quote | Escape | Extra | Nulls Sort | Identifier | Quoted Identifier |\n");
-        sb.append("|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n");
+        sb.append("|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n");
         for (MyDatabaseMetaData md : databases.values()) {
             String catSchemaTerm = "";
             switch (md.getCatalogSchemaSupport().getSupport(CatalogSchemaSupport.Operation.TABLE_DEFINITIONS)) {

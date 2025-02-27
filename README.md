@@ -60,7 +60,7 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 
 ## SQL Properties
 | Name | Version | Full Tablename | Procedure Term | Quote | Escape | Extra | Nulls Sort | Identifier | Quoted Identifier |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | DB2/LINUXX8664 | 12 | schema.table | stored procedure | " | \ | '#', '@' | as HIGH | UPPER_CASE | UNKNOWN |
 | Microsoft SQL Server | 16 | database.schema.table | stored procedure | " | \ | '#', '$', '@' | as LOW | MIXED_CASE | MIXED_CASE |
 | Oracle | 21 | schematable | procedure | " | / | '#', '$' | as HIGH | UPPER_CASE | MIXED_CASE |
