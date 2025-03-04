@@ -83,28 +83,28 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 
 ## Limits
 |  | DB2/LINUXX8664 | Microsoft SQL Server | Oracle | PostgreSQL | H2 | SQLite |
-|---|:---:|:---:|:---:|:---:|:---:|:---: |
-| max binary literal length | 4 kiB - 96 |  | 1 kiB - 24 |  |  |  |
-| max catalog name length | 8 | 128 |  | 63 |  |  |
-| max char literal length | 32 kiB - 96 |  | 2 kiB - 48 |  |  |  |
-| max column name length | 128 | 128 | 128 | 63 |  |  |
-| max columns in group by | 1 kiB - 12 |  |  |  |  |  |
-| max columns in index | 16 | 16 | 32 | 32 |  |  |
-| max columns in order by | 1 kiB - 12 |  |  |  |  |  |
-| max columns in select | 1 kiB - 12 | 4 kiB |  |  |  |  |
-| max columns in table | 1 kiB - 12 | 1 kiB | 1 kiB - 24 | 1600 |  |  |
-| max connections |  | 32 kiB - 1 |  | 8 kiB |  |  |
-| max cursor name length | 128 |  |  | 63 |  |  |
-| max index length | 1 kiB | 900 |  |  |  |  |
-| max logical lob size | 2 GiB - 1 | 2 GiB - 1 | [no access] |  |  |  |
-| max procedure name length | 128 | 128 | 128 | 63 |  |  |
-| max row size | 32 kiB - 91 | 8060 |  | 1 GiB |  |  |
-| max schema name length | 128 | 128 | 128 | 63 |  |  |
-| max statement length | 2 MiB | 500 MiB | 64 kiB - 1 |  |  |  |
-| max statements |  |  |  |  |  |  |
-| max table name length | 128 | 128 | 128 | 63 |  |  |
-| max tables in select |  | 256 |  |  |  |  |
-| max user name length | 30 | 128 | 128 | 63 |  |  |
+|---|:---:|:--------------------:|:---:|:---:|:---:|:---: |
+| max binary literal length | 4 kiB - 96 |                      | 1 kiB - 24 |  |  |  |
+| max catalog name length | 8 |         128          |  | 63 |  |  |
+| max char literal length | 32 kiB - 96 |                      | 2 kiB - 48 |  |  |  |
+| max column name length | 128 |         128          | 128 | 63 |  |  |
+| max columns in group by | 1 kiB - 12 |                      |  |  |  |  |
+| max columns in index | 16 |          16          | 32 | 32 |  |  |
+| max columns in order by | 1 kiB - 12 |                      |  |  |  |  |
+| max columns in select | 1 kiB - 12 |        4 kiB         |  |  |  |  |
+| max columns in table | 1 kiB - 12 |        1 kiB         | 1 kiB - 24 | 1600 |  |  |
+| max connections |  |      32 kiB - 1      |  | 8 kiB |  |  |
+| max cursor name length | 128 |                      |  | 63 |  |  |
+| max index length | 1 kiB |         900          |  |  |  |  |
+| max logical lob size | 2 GiB - 1 |      2 GiB - 1       | [no access] |  |  |  |
+| max procedure name length | 128 |         128          | 128 | 63 |  |  |
+| max row size | 32 kiB - 91 |    8 kiB - 132    |  | 1 GiB |  |  |
+| max schema name length | 128 |         128          | 128 | 63 |  |  |
+| max statement length | 2 MiB |       500 MiB        | 64 kiB - 1 |  |  |  |
+| max statements |  |                      |  |  |  |  |
+| max table name length | 128 |         128          | 128 | 63 |  |  |
+| max tables in select |  |         256          |  |  |  |  |
+| max user name length | 30 |         128          | 128 | 63 |  |  |
 
 
 ## Table Types
@@ -246,7 +246,7 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 | database functional level | s241216103 |  |  |  |  |  |
 | jcc driver build number | 28 |  |  |  |  |  |
 | jcc driver build number | 28 |  |  |  |  |  |
-| lob max length |  |  | 8192 PiB - 1 |  |  |  |
+| lob max length |  |  | 8 EiB - 1 |  |  |  |
 | lob precision |  |  | -1 |  |  |  |
 | trace id |  |  |  |  |  |  |
 | trace object name |  |  |  |  | dbMeta0 |  |

@@ -112,9 +112,16 @@ abstract public class AbstractOutputFormatter {
             long v1GiB = 1024L * v1MiB;
             long v1TiB = 1024L * v1GiB;
             long v1PiB = 1024L * v1TiB;
+            long v1EiB = 1024L * v1PiB; // for Oracle LOB
 
             if (v == 0) {
                 return "";
+            } else if (v % v1EiB == 0) {
+                return Long.toString(v / v1EiB) + " EiB";
+            } else if ((v > v1EiB - 1024) && (v % v1EiB > (v1EiB - 1024L))) {
+                long vv = 1L + v / v1EiB;
+                return Long.toString(vv) + " EiB - " + (vv * v1EiB - v);
+
             } else if (v % v1PiB == 0) {
                 return Long.toString(v / v1PiB) + " PiB";
             } else if ((v > v1PiB - 1024) && (v % v1PiB > (v1PiB - 1024L))) {
@@ -141,7 +148,7 @@ abstract public class AbstractOutputFormatter {
 
             } else if ((v % v1KiB) == 0L) {
                 return Long.toString(v / v1KiB) + " kiB";
-            } else if ((v > v1KiB - 100) && (v % v1KiB) > (v1KiB - 100L)) {
+            } else if ((v > v1KiB - 256) && (v % v1KiB) > (v1KiB - 256L)) {
                 long vv = 1L + (v / v1KiB);
                 return Long.toString(vv) + " kiB - " + (vv * v1KiB - v);
 
