@@ -234,18 +234,8 @@ public class MetadataMethods {
             Arrays.stream(md.getStringFunctions().split(",")).map(String::trim).map(String::toUpperCase).forEach(this.stringFunctions::add);
             Arrays.stream(md.getSystemFunctions().split(",")).map(String::trim).map(String::toUpperCase).forEach(this.systemFunctions::add);
             Arrays.stream(md.getTimeDateFunctions().split(",")).map(String::trim).map(String::toUpperCase).forEach(this.temporalFunctions::add);
-
-            StringBuilder sb = new StringBuilder();
-            try (ResultSet rs = md.getClientInfoProperties()) {
-                while (rs.next()) {
-                    sb.append("\n  - " + rs.getString(1));
-                }
-            }
-            if (sb.length() > 0) {
-                LOG.info("connection properties: {}", sb.toString());
-            }
         } catch (SQLException e) {
-            LOG.warn("{}: {}", e.getClass().getName(), e.getMessage());
+            LOG.warn("{}: {}", md.getClass().getName(), e.getMessage());
         }
     }
 

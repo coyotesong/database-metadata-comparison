@@ -1,5 +1,6 @@
 package com.coyotesong.database;
 
+import com.coyotesong.database.config.ExternalRepositories;
 import com.coyotesong.database.formatters.MarkdownFormatter;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -26,13 +27,17 @@ public class TestContainerDatabaseMetadataComparison {
         //java.util.logging.LogManager.getLogManager().getLogger("").setLevel(java.util.logging.Level.INFO);
     }
 
+    // think of this as injected...
+    private final ExternalRepositories repos = new ExternalRepositories();
+
+
     @Test
     public void test() throws SQLException, InterruptedException {
         final DatabaseComparisons databases = new DatabaseComparisons();
         databases.initialize();
         LOG.info("statistics:\n{}", MetadataMethods.INSTANCE.toString());
 
-        MarkdownFormatter md = new MarkdownFormatter(databases);
+        MarkdownFormatter md = new MarkdownFormatter(repos, databases);
 
         // try (StringWriter w = new StringWriter();
         try (Writer w = new FileWriter("/tmp/database-comparison.md");
@@ -49,6 +54,10 @@ public class TestContainerDatabaseMetadataComparison {
             pw.println(md.formatDriverTable());
 
             pw.println();
+            pw.println("## ClientInfo Properties");
+            pw.println(md.formatClientInfoProperties());
+
+            pw.println();
             pw.println("## Catalog and Schema Support");
             pw.println(md.formatCatalogSchemaSupport());
 
@@ -59,6 +68,10 @@ public class TestContainerDatabaseMetadataComparison {
             pw.println();
             pw.println("## Limits");
             pw.println(md.formatPropertyTable(databases::isLimitProperty)); // right
+
+            pw.println();
+            pw.println("## Table Types");
+            pw.println(md.formatTableTypes());
 
             pw.println();
             pw.println("## DDL Statements");
@@ -83,6 +96,10 @@ public class TestContainerDatabaseMetadataComparison {
             pw.println();
             pw.println("## Other Properties");
             pw.println(md.formatPropertyTable(databases::isOtherProperty)); // center
+
+            pw.println();
+            pw.println("## SQL Keywords");
+            pw.println(md.formatSqlKeywords());
 
             pw.flush();
             // LOG.info(w.toString());

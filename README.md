@@ -9,18 +9,17 @@ The next big step is a comparison of the standard types. I know from prior work 
 
 Here's the current output (see [TestContainerDatabaseMetadataComparison](https://github.com/coyotesong/database-metadata-comparison/blob/main/src/test/java/com/coyotesong/database/TestContainerDatabaseMetadataComparison.java))
 
-(updated 2025-02-26)
-
+(updated 2025-03-03 - this will be split soon...)
 
 ## Product Summary
 | Name | Version | SQL Grammar | Isolation | Holdability | RowID Lifetime | SQL State Type |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
-| DB2/LINUXX8664 | 12 | EXTENDED | null | null | ROWID_UNSUPPORTED | null |
-| Microsoft SQL Server | 16 | CORE | null | null | ROWID_UNSUPPORTED | null |
-| Oracle | 21 | EXTENDED | null | null | ROWID_VALID_FOREVER | null |
-| PostgreSQL | 17 | MINIMUM | null | null | [null] | null |
-| H2 | 2 | CORE | null | null | ROWID_UNSUPPORTED | null |
-| SQLite | 3 | CORE | null | null | [null] | null |
+| DB2/LINUXX8664 | 12 | EXTENDED | READ_COMMITTED | HOLDS | UNSUPPORTED | SQL99 |
+| Microsoft SQL Server | 16 | CORE | READ_COMMITTED | HOLDS | UNSUPPORTED | SQL99 |
+| Oracle | 21 | EXTENDED | READ_COMMITTED | HOLDS | FOREVER | UNKNOWN |
+| PostgreSQL | 17 | MINIMUM | READ_COMMITTED | HOLDS | UNSUPPORTED | SQL99 |
+| H2 | 2 | CORE | READ_COMMITTED | CLOSES | UNSUPPORTED | SQL99 |
+| SQLite | 3 | CORE | SERIALIZABLE | CLOSES | UNSUPPORTED | SQL99 |
 
 
 
@@ -39,12 +38,24 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 ## Drivers
 | Name | Version | Driver Classname | Maven Coordinates |
 |---|:---:|:---|:---|
-| DB2/LINUXX8664 | 12 | com.ibm.db2.jcc.DB2Driver | [com.ibm.db2:jcc:4.32.28](https://central.sonatype.com/artifact/com.ibm.db2/jcc/4.32.28) |
-| Microsoft SQL Server | 16 | com.microsoft.sqlserver.jdbc.SQLServerDriver | [com.microsoft.sqlserver:mssql-jdbc:12.4.0.0](https://central.sonatype.com/artifact/com.microsoft.sqlserver/mssql-jdbc/12.4.0.0) |
-| Oracle | 21 | oracle.jdbc.driver.OracleDriver | [com.oracle.database.jdbc:ojdbc11:23.2.0.0.0](https://central.sonatype.com/artifact/com.oracle.database.jdbc/ojdbc11/23.2.0.0.0) |
-| PostgreSQL | 17 | org.postgresql.Driver | [org.postgresql:postgresql:42.5.4](https://central.sonatype.com/artifact/org.postgresql/postgresql/42.5.4) |
-| H2 | 2 | org.h2.Driver | [com.h2database:h2:2.2.220](https://central.sonatype.com/artifact/com.h2database/h2/2.2.220) |
-| SQLite | 3 | org.sqlite.JDBC | [org.xerial:sqlite-jdbc:3.42.0.0](https://central.sonatype.com/artifact/org.xerial/sqlite-jdbc/3.42.0.0) |
+| DB2/LINUXX8664 | 12 | com.ibm.db2.jcc.DB2Driver | [com.ibm.db2:com.ibm.db2:4.32.28](https://central.sonatype.com/artifact/com.ibm.db2/com.ibm.db2/4.32.28) |
+| Microsoft SQL Server | 16 | com.microsoft.sqlserver.jdbc.SQLServerDriver | [com.microsoft.sqlserver:com.microsoft.sqlserver:12.4.0.0](https://central.sonatype.com/artifact/com.microsoft.sqlserver/com.microsoft.sqlserver/12.4.0.0) |
+| Oracle | 21 | oracle.jdbc.driver.OracleDriver | [com.oracle.database.jdbc:com.oracle.database.jdbc:23.2.0.0.0](https://central.sonatype.com/artifact/com.oracle.database.jdbc/com.oracle.database.jdbc/23.2.0.0.0) |
+| PostgreSQL | 17 | org.postgresql.Driver | [org.postgresql:org.postgresql:42.5.4](https://central.sonatype.com/artifact/org.postgresql/org.postgresql/42.5.4) |
+| H2 | 2 | org.h2.Driver | [com.h2database:com.h2database:2.2.220](https://central.sonatype.com/artifact/com.h2database/com.h2database/2.2.220) |
+| SQLite | 3 | org.sqlite.JDBC | [org.xerial:org.xerial:3.42.0.0](https://central.sonatype.com/artifact/org.xerial/org.xerial/3.42.0.0) |
+
+
+
+## ClientInfo Properties
+| Name | ClientInfo Properties |
+|---|---|
+| DB2/LINUXX8664 | ApplicationName, ClientAccountingInformation, ClientHostname, ClientUser |
+| Microsoft SQL Server |  |
+| Oracle |  |
+| PostgreSQL | ApplicationName |
+| H2 | numServers |
+| SQLite |  |
 
 
 
@@ -85,7 +96,7 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 | max connections |  | 32 kiB - 1 |  | 8 kiB |  |  |
 | max cursor name length | 128 |  |  | 63 |  |  |
 | max index length | 1 kiB | 900 |  |  |  |  |
-| max logical lob size | 2 GiB - 1 | 2 GiB - 1 | [null] |  |  |  |
+| max logical lob size | 2 GiB - 1 | 2 GiB - 1 | [no access] |  |  |  |
 | max procedure name length | 128 | 128 | 128 | 63 |  |  |
 | max row size | 32 kiB - 91 | 8060 |  | 1 GiB |  |  |
 | max schema name length | 128 | 128 | 128 | 63 |  |  |
@@ -94,6 +105,40 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 | max table name length | 128 | 128 | 128 | 63 |  |  |
 | max tables in select |  | 256 |  |  |  |  |
 | max user name length | 30 | 128 | 128 | 63 |  |  |
+
+
+## Table Types
+|  | DB2/LINUXX8664 | Microsoft SQL Server | Oracle | PostgreSQL | H2 | SQLite |
+|---|:---:|:---:|:---:|:---:|:---:|:---: |
+| ALIAS |  | ☑ |  |  |  |  |  |
+| BASE TABLE |  |  |  |  |  | ☑ |  |
+| FOREIGN TABLE |  |  |  |  | ☑ |  |  |
+| GLOBAL TEMPORARY |  |  |  |  |  | ☑ | ☑ |
+| HIERARCHY TABLE |  | ☑ |  |  |  |  |  |
+| INDEX |  |  |  |  | ☑ |  |  |
+| INOPERATIVE VIEW |  | ☑ |  |  |  |  |  |
+| LOCAL TEMPORARY |  |  |  |  |  | ☑ |  |
+| MATERIALIZED QUERY TABLE |  | ☑ |  |  |  |  |  |
+| MATERIALIZED VIEW |  |  |  |  | ☑ |  |  |
+| NICKNAME |  | ☑ |  |  |  |  |  |
+| PARTITIONED INDEX |  |  |  |  | ☑ |  |  |
+| PARTITIONED TABLE |  |  |  |  | ☑ |  |  |
+| SEQUENCE |  |  |  |  | ☑ |  |  |
+| SYNONYM |  | ☑ |  | ☑ |  | ☑ |  |
+| SYSTEM INDEX |  |  |  |  | ☑ |  |  |
+| SYSTEM TABLE |  | ☑ | ☑ |  | ☑ |  | ☑ |
+| SYSTEM TOAST INDEX |  |  |  |  | ☑ |  |  |
+| SYSTEM TOAST TABLE |  |  |  |  | ☑ |  |  |
+| SYSTEM VIEW |  |  |  |  | ☑ |  |  |
+| TABLE |  | ☑ | ☑ | ☑ | ☑ |  | ☑ |
+| TEMPORARY INDEX |  |  |  |  | ☑ |  |  |
+| TEMPORARY SEQUENCE |  |  |  |  | ☑ |  |  |
+| TEMPORARY TABLE |  |  |  |  | ☑ |  |  |
+| TEMPORARY VIEW |  |  |  |  | ☑ |  |  |
+| TYPE |  |  |  |  | ☑ |  |  |
+| TYPED TABLE |  | ☑ |  |  |  |  |  |
+| TYPED VIEW |  | ☑ |  |  |  |  |  |
+| VIEW |  | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 
 
 ## DDL Statements
@@ -117,7 +162,7 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 |---|:---:|:---:|:---:|:---:|:---:|:---: |
 | all procedures are callable |  | ☑ |  | ☑ | ☑ |  |
 | all tables are selectable |  | ☑ |  | ☑ | ☑ | ☑ |
-| generated key always returned | ☑ | ☑ |  | ☑ | ☑ | [null] |
+| generated key always returned | ☑ | ☑ |  | ☑ | ☑ | [not supported] |
 | null plus non null is null | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | batch updates | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | correlated subqueries | ☑ | ☑ | ☑ | ☑ | ☑ |  |
@@ -144,7 +189,7 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 ## Transactions
 |  | DB2/LINUXX8664 | Microsoft SQL Server | Oracle | PostgreSQL | H2 | SQLite |
 |---|:---:|:---:|:---:|:---:|:---:|:---: |
-| auto commit failure closes all result sets |  |  |  |  |  | [null] |
+| auto commit failure closes all result sets |  |  |  |  |  | [not supported] |
 | multiple transactions | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | open cursors across commit | ☑ |  |  |  |  |  |
 | open cursors across rollback |  |  |  |  |  |  |
@@ -160,49 +205,623 @@ Here's the current output (see [TestContainerDatabaseMetadataComparison](https:/
 | named parameters | ☑ | ☑ | ☑ |  |  | ☑ |
 | positioned delete | ☑ | ☑ |  |  |  |  |
 | positioned update | ☑ | ☑ |  |  |  |  |
-| ref cursors | ☑ |  | [null] | ☑ |  |  |
-| stored functions using call syntax |  | ☑ | ☑ | ☑ | ☑ | [null] |
+| ref cursors | ☑ |  | [no access] | ☑ |  |  |
+| stored functions using call syntax |  | ☑ | ☑ | ☑ | ☑ | [not supported] |
 | stored procedures | ☑ | ☑ | ☑ | ☑ |  |  |
 
 
 ## Other Boolean Properties
-|                                        | DB2/LINUXX8664 | Microsoft SQL Server | Oracle | PostgreSQL | H2 | SQLite |
-|----------------------------------------|:---:|:---:|:---:|:---:|:---:|:---: |
-| does max row size include blobs        |  |  | ☑ |  |  |  |
-| is catalog at start                    | ☑ | ☑ |  | ☑ | ☑ | ☑ |
-| is compatible122 or greater            |  |  | [null] |  |  |  |
-| is IDS database ansi compliant         | [null] |  |  |  |  |  |
-| is IDS database logging                | [null] |  |  |  |  |  |
-| is reset required fo RDB2eWLM          | ☑ |  |  |  |  |  |
-| is SQLrowset cursor support enabled    | ☑ |  |  |  |  |  |
-| is server big SCN                      |  |  | [null] |  |  |  |
-| locators update copy                   | ☑ | ☑ | ☑ | ☑ |  |  |
-| binary xml format                      | ☑ |  |  |  |  |  |
-| column aliasing                        | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| convert                                |  | ☑ |  |  | ☑ |  |
-| DB2 progressive streaming              | ☑ |  |  |  |  |  |
-| different table correlation names      |  |  | ☑ |  |  |  |
-| integrity enhancement facility         | ☑ |  | ☑ | ☑ | ☑ |  |
-| RDB implicit commit                    |  |  |  |  |  |  |
-| SQLrowset cursors                      |  |  |  |  |  |  |
-| statement pooling                      |  |  | ☑ |  |  |  |
-| table correlation names                | ☑ | ☑ | ☑ | ☑ | ☑ |  |
+|  | DB2/LINUXX8664 | Microsoft SQL Server | Oracle | PostgreSQL | H2 | SQLite |
+|---|:---:|:---:|:---:|:---:|:---:|:---: |
+| does max row size include blobs |  |  | ☑ |  |  |  |
+| is catalog at start | ☑ | ☑ |  | ☑ | ☑ | ☑ |
+| is compatible122 or greater |  |  | [no access] |  |  |  |
+| is IDS database ansi compliant | [not supported] |  |  |  |  |  |
+| is IDS database logging | [not supported] |  |  |  |  |  |
+| is reset required for DB2eWWLM | ☑ |  |  |  |  |  |
+| is SQLrowset cursor support enabled | ☑ |  |  |  |  |  |
+| is server big SCN |  |  | [no access] |  |  |  |
+| locators update copy | ☑ | ☑ | ☑ | ☑ |  |  |
+| binary xml format | ☑ |  |  |  |  |  |
+| column aliasing | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| convert |  | ☑ |  |  | ☑ |  |
+| DB2 progressive streaming | ☑ |  |  |  |  |  |
+| different table correlation names |  |  | ☑ |  |  |  |
+| integrity enhancement facility | ☑ |  | ☑ | ☑ | ☑ |  |
+| RDB implicit commit |  |  |  |  |  |  |
+| SQLrowset cursors |  |  |  |  |  |  |
+| statement pooling |  |  | ☑ |  |  |  |
+| table correlation names | ☑ | ☑ | ☑ | ☑ | ☑ |  |
 | use fixed length clob substr statement |  |  |  |  |  |  |
-| uses local file per table              |  |  |  |  |  |  |
-| uses local files                       |  |  |  |  | ☑ | ☑ |
+| uses local file per table |  |  |  |  |  |  |
+| uses local files |  |  |  |  | ☑ | ☑ |
 
 
 ## Other Properties
 |  | DB2/LINUXX8664 | Microsoft SQL Server | Oracle | PostgreSQL | H2 | SQLite |
 |---|:---:|:---:|:---:|:---:|:---:|:---: |
-| access banner |  |  | [null] |  |  |  |
-| audit banner |  |  | [null] |  |  |  |
+| access banner |  |  | [no access] |  |  |  |
+| audit banner |  |  | [no access] |  |  |  |
 | database compatibility level |  | 160 |  |  |  |  |
 | database functional level | s241216103 |  |  |  |  |  |
 | jcc driver build number | 28 |  |  |  |  |  |
 | jcc driver build number | 28 |  |  |  |  |  |
-| lob max length |  |  | 8589934592 GiB - 1 |  |  |  |
+| lob max length |  |  | 8192 PiB - 1 |  |  |  |
 | lob precision |  |  | -1 |  |  |  |
 | trace id |  |  |  |  |  |  |
 | trace object name |  |  |  |  | dbMeta0 |  |
+
+
+## SQL Keywords
+|  | DB2/LINUXX8664 | Microsoft SQL Server | Oracle | PostgreSQL | H2 | SQLite |
+|---|:---:|:---:|:---:|:---:|:---:|:---: |
+| ABORT |  |  |  |  | ☑ |  | ☑ |
+| ABSENT |  |  |  |  | ☑ |  |  |
+| ACCESS |  |  |  | ☑ | ☑ |  |  |
+| ACTION |  |  |  |  |  |  | ☑ |
+| ADD |  |  | ☑ | ☑ |  |  |  |
+| AFTER |  | ☑ |  |  |  |  | ☑ |
+| AGGREGATE |  |  |  |  | ☑ |  |  |
+| ALIAS |  | ☑ |  |  |  |  |  |
+| ALL |  |  | ☑ |  |  |  |  |
+| ALLOW |  | ☑ |  |  |  |  |  |
+| ALL_PL_SQL_RESERVED_ WORDS |  |  |  | ☑ |  |  |  |
+| ALSO |  |  |  |  | ☑ |  |  |
+| ALTER |  |  | ☑ | ☑ |  |  |  |
+| ANALYSE |  |  |  |  | ☑ |  |  |
+| ANALYZE |  |  |  |  | ☑ |  | ☑ |
+| AND |  |  | ☑ |  |  |  |  |
+| ANY |  |  | ☑ |  |  |  |  |
+| APPLICATION |  | ☑ |  |  |  |  |  |
+| AS |  |  | ☑ |  |  |  |  |
+| ASC |  |  | ☑ |  |  |  |  |
+| ASSOCIATE |  | ☑ |  |  |  |  |  |
+| ASUTIME |  | ☑ |  |  |  |  |  |
+| ATTACH |  |  |  |  | ☑ |  | ☑ |
+| AUDIT |  | ☑ |  | ☑ |  |  |  |
+| AUTHORIZATION |  |  | ☑ |  |  |  |  |
+| AUTOINCREMENT |  |  |  |  |  |  | ☑ |
+| AUX |  | ☑ |  |  |  |  |  |
+| AUXILIARY |  | ☑ |  |  |  |  |  |
+| BACKUP |  |  | ☑ |  |  |  |  |
+| BACKWARD |  |  |  |  | ☑ |  |  |
+| BEFORE |  | ☑ |  |  |  |  | ☑ |
+| BEGIN |  |  | ☑ |  |  |  |  |
+| BETWEEN |  |  | ☑ |  |  |  |  |
+| BINARY |  | ☑ |  |  |  |  |  |
+| BIT |  |  |  |  | ☑ |  |  |
+| BREAK |  |  | ☑ |  |  |  |  |
+| BROWSE |  |  | ☑ |  |  |  |  |
+| BUFFERPOOL |  | ☑ |  |  |  |  |  |
+| BULK |  |  | ☑ |  |  |  |  |
+| BY |  |  | ☑ |  |  |  |  |
+| CACHE |  | ☑ |  |  | ☑ |  |  |
+| CALL |  | ☑ |  |  |  |  |  |
+| CALLED |  | ☑ |  |  |  |  |  |
+| CAPTURE |  | ☑ |  |  |  |  |  |
+| CARDINALITY |  | ☑ |  |  |  |  |  |
+| CASCADE |  |  | ☑ |  |  |  | ☑ |
+| CASE |  |  | ☑ |  |  |  |  |
+| CCSID |  | ☑ |  |  |  |  |  |
+| CHECK |  |  | ☑ |  |  |  |  |
+| CHECKPOINT |  |  | ☑ |  | ☑ |  |  |
+| CLASS |  |  |  |  | ☑ |  |  |
+| CLOSE |  |  | ☑ |  |  |  |  |
+| CLUSTER |  | ☑ |  | ☑ | ☑ |  |  |
+| CLUSTERED |  |  | ☑ |  |  |  |  |
+| COALESCE |  |  | ☑ |  |  |  |  |
+| COLLATE |  |  | ☑ |  |  |  |  |
+| COLLECTION |  | ☑ |  |  |  |  |  |
+| COLLID |  | ☑ |  |  |  |  |  |
+| COLUMN |  |  | ☑ | ☑ |  |  |  |
+| COLUMNS |  |  |  |  | ☑ |  |  |
+| COMMENT |  | ☑ |  | ☑ | ☑ |  |  |
+| COMMENTS |  |  |  |  | ☑ |  |  |
+| COMMIT |  |  | ☑ |  |  |  |  |
+| COMPRESS |  |  |  | ☑ |  |  |  |
+| COMPRESSION |  |  |  |  | ☑ |  |  |
+| COMPUTE |  |  | ☑ |  |  |  |  |
+| CONCAT |  | ☑ |  |  |  |  |  |
+| CONCURRENTLY |  |  |  |  | ☑ |  |  |
+| CONDITION |  | ☑ |  |  |  |  |  |
+| CONDITIONAL |  |  |  |  | ☑ |  |  |
+| CONFIGURATION |  |  |  |  | ☑ |  |  |
+| CONFLICT |  |  |  |  | ☑ |  | ☑ |
+| CONNECT |  |  |  | ☑ |  |  |  |
+| CONNECTION |  |  |  |  | ☑ |  |  |
+| CONSTRAINT |  |  | ☑ |  |  |  |  |
+| CONTAINS |  | ☑ | ☑ |  |  |  |  |
+| CONTAINSTABLE |  |  | ☑ |  |  |  |  |
+| CONTENT |  |  |  |  | ☑ |  |  |
+| CONTINUE |  |  | ☑ |  |  |  |  |
+| CONVERSION |  |  |  |  | ☑ |  |  |
+| CONVERT |  |  | ☑ |  |  |  |  |
+| COPY |  |  |  |  | ☑ |  |  |
+| COST |  |  |  |  | ☑ |  |  |
+| COUNT_BIG |  | ☑ |  |  |  |  |  |
+| CREATE |  |  | ☑ |  |  |  |  |
+| CROSS |  |  | ☑ |  |  |  |  |
+| CSV |  |  |  |  | ☑ |  |  |
+| CURRENT |  |  | ☑ |  |  |  |  |
+| CURRENT_CATALOG |  |  |  |  | ☑ | ☑ |  |
+| CURRENT_DATE |  |  | ☑ |  |  |  |  |
+| CURRENT_LC_CTYPE |  | ☑ |  |  |  |  |  |
+| CURRENT_PATH |  | ☑ |  |  |  |  |  |
+| CURRENT_SCHEMA |  |  |  |  | ☑ | ☑ |  |
+| CURRENT_SERVER |  | ☑ |  |  |  |  |  |
+| CURRENT_TIME |  |  | ☑ |  |  |  |  |
+| CURRENT_TIMESTAMP |  |  | ☑ |  |  |  |  |
+| CURRENT_TIMEZONE |  | ☑ |  |  |  |  |  |
+| CURRENT_USER |  |  | ☑ |  |  |  |  |
+| CURSOR |  |  | ☑ |  |  |  |  |
+| CYCLE |  | ☑ |  |  |  |  |  |
+| DATA |  | ☑ |  |  |  |  |  |
+| DATABASE |  | ☑ | ☑ |  | ☑ |  | ☑ |
+| DATE |  |  |  | ☑ |  |  |  |
+| DAYS |  | ☑ |  |  |  |  |  |
+| DB2GENERAL |  | ☑ |  |  |  |  |  |
+| DB2GENRL |  | ☑ |  |  |  |  |  |
+| DB2SQL |  | ☑ |  |  |  |  |  |
+| DBCC |  |  | ☑ |  |  |  |  |
+| DBINFO |  | ☑ |  |  |  |  |  |
+| DEALLOCATE |  |  | ☑ |  |  |  |  |
+| DECLARE |  |  | ☑ |  |  |  |  |
+| DEFAULT |  |  | ☑ |  |  |  |  |
+| DEFAULTS |  | ☑ |  |  |  |  |  |
+| DEFERRABLE |  |  |  |  |  |  | ☑ |
+| DEFERRED |  |  |  |  |  |  | ☑ |
+| DEFINITION |  | ☑ |  |  |  |  |  |
+| DELETE |  |  | ☑ |  |  |  |  |
+| DELIMITER |  |  |  |  | ☑ |  |  |
+| DELIMITERS |  |  |  |  | ☑ |  |  |
+| DENY |  |  | ☑ |  |  |  |  |
+| DEPENDS |  |  |  |  | ☑ |  |  |
+| DESC |  |  | ☑ |  |  |  | ☑ |
+| DETACH |  |  |  |  | ☑ |  | ☑ |
+| DETERMINISTIC |  | ☑ |  |  |  |  |  |
+| DICTIONARY |  |  |  |  | ☑ |  |  |
+| DISABLE |  |  |  |  | ☑ |  |  |
+| DISALLOW |  | ☑ |  |  |  |  |  |
+| DISCARD |  |  |  |  | ☑ |  |  |
+| DISK |  |  | ☑ |  |  |  |  |
+| DISTINCT |  |  | ☑ |  |  |  |  |
+| DISTRIBUTED |  |  | ☑ |  |  |  |  |
+| DO |  | ☑ |  |  | ☑ |  |  |
+| DOCUMENT |  |  |  |  | ☑ |  |  |
+| DOUBLE |  |  | ☑ |  |  |  |  |
+| DROP |  |  | ☑ | ☑ |  |  |  |
+| DSNHATTR |  | ☑ |  |  |  |  |  |
+| DSSIZE |  | ☑ |  |  |  |  |  |
+| DUMP |  |  | ☑ |  |  |  |  |
+| DYNAMIC |  | ☑ |  |  |  |  |  |
+| EACH |  | ☑ |  |  |  |  |  |
+| EDITPROC |  | ☑ |  |  |  |  |  |
+| ELSE |  |  | ☑ |  |  |  |  |
+| ELSEIF |  | ☑ |  |  |  |  |  |
+| EMPTY |  |  |  |  | ☑ |  |  |
+| ENABLE |  |  |  |  | ☑ |  |  |
+| ENCODING |  | ☑ |  |  | ☑ |  |  |
+| ENCRYPTED |  |  |  |  | ☑ |  |  |
+| END |  |  | ☑ |  |  |  |  |
+| END-EXEC1 |  | ☑ |  |  |  |  |  |
+| ENUM |  |  |  |  | ☑ |  |  |
+| ERASE |  | ☑ |  |  |  |  |  |
+| ERRLVL |  |  | ☑ |  |  |  |  |
+| ERROR |  |  |  |  | ☑ |  |  |
+| ESCAPE |  |  | ☑ |  |  |  |  |
+| EVENT |  |  |  |  | ☑ |  |  |
+| EXCEPT |  |  | ☑ |  |  |  |  |
+| EXCLUDING |  | ☑ |  |  |  |  |  |
+| EXCLUSIVE |  |  |  | ☑ | ☑ |  | ☑ |
+| EXEC |  |  | ☑ |  |  |  |  |
+| EXECUTE |  |  | ☑ |  |  |  |  |
+| EXISTS |  |  | ☑ |  |  |  |  |
+| EXIT |  | ☑ | ☑ |  |  |  |  |
+| EXPLAIN |  |  |  |  | ☑ |  | ☑ |
+| EXPRESSION |  |  |  |  | ☑ |  |  |
+| EXTENSION |  |  |  |  | ☑ |  |  |
+| EXTERNAL |  |  | ☑ |  |  |  |  |
+| FAIL |  |  |  |  |  |  | ☑ |
+| FAMILY |  |  |  |  | ☑ |  |  |
+| FENCED |  | ☑ |  |  |  |  |  |
+| FETCH |  |  | ☑ |  |  |  |  |
+| FIELDPROC |  | ☑ |  |  |  |  |  |
+| FILE |  | ☑ | ☑ | ☑ |  |  |  |
+| FILLFACTOR |  |  | ☑ |  |  |  |  |
+| FINAL |  | ☑ |  |  |  |  |  |
+| FINALIZE |  |  |  |  | ☑ |  |  |
+| FOR |  |  | ☑ |  |  |  |  |
+| FORCE |  |  |  |  | ☑ |  |  |
+| FOREIGN |  |  | ☑ |  |  |  |  |
+| FORMAT |  |  |  |  | ☑ |  |  |
+| FORWARD |  |  |  |  | ☑ |  |  |
+| FREE |  | ☑ |  |  |  |  |  |
+| FREETEXT |  |  | ☑ |  |  |  |  |
+| FREETEXTTABLE |  |  | ☑ |  |  |  |  |
+| FREEZE |  |  |  |  | ☑ |  |  |
+| FROM |  |  | ☑ |  |  |  |  |
+| FULL |  |  | ☑ |  |  |  |  |
+| FUNCTION |  | ☑ | ☑ |  |  |  |  |
+| FUNCTIONS |  |  |  |  | ☑ |  |  |
+| GENERAL |  | ☑ |  |  |  |  |  |
+| GENERATED |  | ☑ |  |  | ☑ |  |  |
+| GLOB |  |  |  |  |  |  | ☑ |
+| GOTO |  |  | ☑ |  |  |  |  |
+| GRANT |  |  | ☑ |  |  |  |  |
+| GRAPHIC |  | ☑ |  |  |  |  |  |
+| GREATEST |  |  |  |  | ☑ |  |  |
+| GROUP |  |  | ☑ |  |  |  |  |
+| GROUPS |  |  |  |  | ☑ | ☑ |  |
+| HANDLER |  | ☑ |  |  | ☑ |  |  |
+| HAVING |  |  | ☑ |  |  |  |  |
+| HEADER |  |  |  |  | ☑ |  |  |
+| HOLD |  | ☑ |  |  |  |  |  |
+| HOLDLOCK |  |  | ☑ |  |  |  |  |
+| HOURS |  | ☑ |  |  |  |  |  |
+| IDENTIFIED |  |  |  | ☑ |  |  |  |
+| IDENTITY |  |  | ☑ |  |  |  |  |
+| IDENTITYCOL |  |  | ☑ |  |  |  |  |
+| IDENTITY_INSERT |  |  | ☑ |  |  |  |  |
+| IF |  | ☑ | ☑ |  | ☑ | ☑ |  |
+| IGNORE |  |  |  |  |  |  | ☑ |
+| ILIKE |  |  |  |  | ☑ | ☑ |  |
+| IMMEDIATE |  |  |  | ☑ |  |  |  |
+| IMMUTABLE |  |  |  |  | ☑ |  |  |
+| IMPLICIT |  |  |  |  | ☑ |  |  |
+| IMPORT |  |  |  |  | ☑ |  |  |
+| IN |  |  | ☑ |  |  |  |  |
+| INCLUDE |  |  |  |  | ☑ |  |  |
+| INCLUDING |  | ☑ |  |  |  |  |  |
+| INCREMENT |  | ☑ |  | ☑ |  |  |  |
+| INDENT |  |  |  |  | ☑ |  |  |
+| INDEX |  | ☑ | ☑ | ☑ | ☑ |  | ☑ |
+| INDEXED |  |  |  |  |  |  | ☑ |
+| INDEXES |  |  |  |  | ☑ |  |  |
+| INHERIT |  | ☑ |  |  | ☑ |  |  |
+| INHERITS |  |  |  |  | ☑ |  |  |
+| INITIAL |  |  |  | ☑ |  |  |  |
+| INITIALLY |  |  |  |  |  |  | ☑ |
+| INLINE |  |  |  |  | ☑ |  |  |
+| INNER |  |  | ☑ |  |  |  |  |
+| INOUT |  | ☑ |  |  |  |  |  |
+| INSERT |  |  | ☑ |  |  |  |  |
+| INSTEAD |  |  |  |  | ☑ |  | ☑ |
+| INTEGRITY |  | ☑ |  |  |  |  |  |
+| INTERSECT |  |  | ☑ | ☑ |  |  |  |
+| INTO |  |  | ☑ |  |  |  |  |
+| IS |  |  | ☑ |  |  |  |  |
+| ISNULL |  |  |  |  | ☑ |  | ☑ |
+| ISOBID |  | ☑ |  |  |  |  |  |
+| ITERATE |  | ☑ |  |  |  |  |  |
+| JAR |  | ☑ |  |  |  |  |  |
+| JAVA |  | ☑ |  |  |  |  |  |
+| JOIN |  |  | ☑ |  |  |  |  |
+| JSON |  |  |  |  | ☑ |  |  |
+| JSON_ARRAY |  |  |  |  | ☑ |  |  |
+| JSON_ARRAYAGG |  |  |  |  | ☑ |  |  |
+| JSON_EXISTS |  |  |  |  | ☑ |  |  |
+| JSON_OBJECT |  |  |  |  | ☑ |  |  |
+| JSON_OBJECTAGG |  |  |  |  | ☑ |  |  |
+| JSON_QUERY |  |  |  |  | ☑ |  |  |
+| JSON_SCALAR |  |  |  |  | ☑ |  |  |
+| JSON_SERIALIZE |  |  |  |  | ☑ |  |  |
+| JSON_TABLE |  |  |  |  | ☑ |  |  |
+| JSON_VALUE |  |  |  |  | ☑ |  |  |
+| KEEP |  |  |  |  | ☑ |  |  |
+| KEY |  |  | ☑ |  |  | ☑ | ☑ |
+| KEYS |  |  |  |  | ☑ |  |  |
+| KILL |  |  | ☑ |  |  |  |  |
+| LABEL |  | ☑ |  |  | ☑ |  |  |
+| LC_CTYPE |  | ☑ |  |  |  |  |  |
+| LEAKPROOF |  |  |  |  | ☑ |  |  |
+| LEAST |  |  |  |  | ☑ |  |  |
+| LEAVE |  | ☑ |  |  |  |  |  |
+| LEFT |  |  | ☑ |  |  |  |  |
+| LEVEL |  |  |  | ☑ |  |  |  |
+| LIKE |  |  | ☑ |  |  |  |  |
+| LIMIT |  |  |  |  | ☑ | ☑ | ☑ |
+| LINENO |  |  | ☑ |  |  |  |  |
+| LINKTYPE |  | ☑ |  |  |  |  |  |
+| LISTEN |  |  |  |  | ☑ |  |  |
+| LOAD |  |  | ☑ |  | ☑ |  |  |
+| LOCALE |  | ☑ |  |  |  |  |  |
+| LOCATION |  |  |  |  | ☑ |  |  |
+| LOCATOR |  | ☑ |  |  |  |  |  |
+| LOCATORS |  | ☑ |  |  |  |  |  |
+| LOCK |  | ☑ |  | ☑ | ☑ |  |  |
+| LOCKED |  |  |  |  | ☑ |  |  |
+| LOCKMAX |  | ☑ |  |  |  |  |  |
+| LOCKSIZE |  | ☑ |  |  |  |  |  |
+| LOGGED |  |  |  |  | ☑ |  |  |
+| LONG |  | ☑ |  | ☑ |  |  |  |
+| LOOP |  | ☑ |  |  |  |  |  |
+| MAPPING |  |  |  |  | ☑ |  |  |
+| MATERIALIZED |  |  |  |  | ☑ |  |  |
+| MAXEXTENTS |  |  |  | ☑ |  |  |  |
+| MAXVALUE |  | ☑ |  |  |  |  |  |
+| MERGE |  |  | ☑ |  |  |  |  |
+| MERGE_ACTION |  |  |  |  | ☑ |  |  |
+| MICROSECOND |  | ☑ |  |  |  |  |  |
+| MICROSECONDS |  | ☑ |  |  |  |  |  |
+| MINUS |  |  |  | ☑ |  | ☑ |  |
+| MINUTES |  | ☑ |  |  |  |  |  |
+| MINVALUE |  | ☑ |  |  |  |  |  |
+| MODE |  | ☑ |  | ☑ | ☑ |  |  |
+| MODIFIES |  | ☑ |  |  |  |  |  |
+| MONTHS |  | ☑ |  |  |  |  |  |
+| MOVE |  |  |  |  | ☑ |  |  |
+| NATIONAL |  |  | ☑ |  |  |  |  |
+| NESTED |  |  |  |  | ☑ |  |  |
+| NEW |  | ☑ |  |  |  |  |  |
+| NEW_TABLE |  | ☑ |  |  |  |  |  |
+| NFC |  |  |  |  | ☑ |  |  |
+| NFD |  |  |  |  | ☑ |  |  |
+| NFKC |  |  |  |  | ☑ |  |  |
+| NFKD |  |  |  |  | ☑ |  |  |
+| NOAUDIT |  |  |  | ☑ |  |  |  |
+| NOCACHE |  | ☑ |  |  |  |  |  |
+| NOCHECK |  |  | ☑ |  |  |  |  |
+| NOCOMPRESS |  |  |  | ☑ |  |  |  |
+| NOCYCLE |  | ☑ |  |  |  |  |  |
+| NODENAME |  | ☑ |  |  |  |  |  |
+| NODENUMBER |  | ☑ |  |  |  |  |  |
+| NOMAXVALUE |  | ☑ |  |  |  |  |  |
+| NOMINVALUE |  | ☑ |  |  |  |  |  |
+| NONCLUSTERED |  |  | ☑ |  |  |  |  |
+| NOORDER |  | ☑ |  |  |  |  |  |
+| NOT |  |  | ☑ |  |  |  |  |
+| NOTHING |  |  |  |  | ☑ |  |  |
+| NOTIFY |  |  |  |  | ☑ |  |  |
+| NOTNULL |  |  |  |  | ☑ |  | ☑ |
+| NOWAIT |  |  |  | ☑ | ☑ |  |  |
+| NULL |  |  | ☑ |  |  |  |  |
+| NULLIF |  |  | ☑ |  |  |  |  |
+| NULLS |  | ☑ |  |  |  |  |  |
+| NUMBER |  |  |  | ☑ |  |  |  |
+| NUMPARTS |  | ☑ |  |  |  |  |  |
+| OBID |  | ☑ |  |  |  |  |  |
+| OF |  |  | ☑ |  |  |  |  |
+| OFF |  |  | ☑ |  | ☑ |  |  |
+| OFFLINE |  |  |  | ☑ |  |  |  |
+| OFFSET |  |  |  |  | ☑ | ☑ | ☑ |
+| OFFSETS |  |  | ☑ |  |  |  |  |
+| OIDS |  |  |  |  | ☑ |  |  |
+| OLD |  | ☑ |  |  |  |  |  |
+| OLD_TABLE |  | ☑ |  |  |  |  |  |
+| OMIT |  |  |  |  | ☑ |  |  |
+| ON |  |  | ☑ |  |  |  |  |
+| ONLINE |  |  |  | ☑ |  |  |  |
+| OPEN |  |  | ☑ |  |  |  |  |
+| OPENDATASOURCE |  |  | ☑ |  |  |  |  |
+| OPENQUERY |  |  | ☑ |  |  |  |  |
+| OPENROWSET |  |  | ☑ |  |  |  |  |
+| OPENXML |  |  | ☑ |  |  |  |  |
+| OPERATOR |  |  |  |  | ☑ |  |  |
+| OPTIMIZATION |  | ☑ |  |  |  |  |  |
+| OPTIMIZE |  | ☑ |  |  |  |  |  |
+| OPTION |  |  | ☑ |  |  |  |  |
+| OR |  |  | ☑ |  |  |  |  |
+| ORDER |  |  | ☑ |  |  |  |  |
+| OUT |  | ☑ |  |  |  |  |  |
+| OUTER |  |  | ☑ |  |  |  |  |
+| OVER |  |  | ☑ |  |  |  |  |
+| OVERRIDING |  | ☑ |  |  |  |  |  |
+| OWNED |  |  |  |  | ☑ |  |  |
+| OWNER |  |  |  |  | ☑ |  |  |
+| PACKAGE |  | ☑ |  |  |  |  |  |
+| PARALLEL |  |  |  |  | ☑ |  |  |
+| PARAMETER |  | ☑ |  |  |  |  |  |
+| PARSER |  |  |  |  | ☑ |  |  |
+| PART |  | ☑ |  |  |  |  |  |
+| PARTITION |  | ☑ |  |  |  |  |  |
+| PASSING |  |  |  |  | ☑ |  |  |
+| PASSWORD |  |  |  |  | ☑ |  |  |
+| PATH |  | ☑ |  |  |  |  |  |
+| PCTFREE |  |  |  | ☑ |  |  |  |
+| PERCENT |  |  | ☑ |  |  |  |  |
+| PIECESIZE |  | ☑ |  |  |  |  |  |
+| PIVOT |  |  | ☑ |  |  |  |  |
+| PLAN |  | ☑ | ☑ |  | ☑ |  | ☑ |
+| PLANS |  |  |  |  | ☑ |  |  |
+| POLICY |  |  |  |  | ☑ |  |  |
+| PRAGMA |  |  |  |  |  |  | ☑ |
+| PRECISION |  |  | ☑ |  |  |  |  |
+| PREPARED |  |  |  |  | ☑ |  |  |
+| PRIMARY |  |  | ☑ |  |  |  |  |
+| PRINT |  |  | ☑ |  |  |  |  |
+| PRIOR |  |  |  | ☑ |  |  |  |
+| PRIQTY |  | ☑ |  |  |  |  |  |
+| PROC |  |  | ☑ |  |  |  |  |
+| PROCEDURAL |  |  |  |  | ☑ |  |  |
+| PROCEDURE |  |  | ☑ |  |  |  |  |
+| PROCEDURES |  |  |  |  | ☑ |  |  |
+| PROGRAM |  | ☑ |  |  | ☑ |  |  |
+| PSID |  | ☑ |  |  |  |  |  |
+| PUBLIC |  |  | ☑ |  |  |  |  |
+| PUBLICATION |  |  |  |  | ☑ |  |  |
+| QUALIFY |  |  |  |  |  | ☑ |  |
+| QUERY |  |  |  |  |  |  | ☑ |
+| QUERYNO |  | ☑ |  |  |  |  |  |
+| QUOTE |  |  |  |  | ☑ |  |  |
+| QUOTES |  |  |  |  | ☑ |  |  |
+| RAISE |  |  |  |  |  |  | ☑ |
+| RAISERROR |  |  | ☑ |  |  |  |  |
+| READ |  |  | ☑ |  |  |  |  |
+| READS |  | ☑ |  |  |  |  |  |
+| READTEXT |  |  | ☑ |  |  |  |  |
+| REASSIGN |  |  |  |  | ☑ |  |  |
+| RECHECK |  |  |  |  | ☑ |  |  |
+| RECONFIGURE |  |  | ☑ |  |  |  |  |
+| RECOVERY |  | ☑ |  |  |  |  |  |
+| REFERENCES |  |  | ☑ |  |  |  |  |
+| REFERENCING |  | ☑ |  |  |  |  |  |
+| REFRESH |  |  |  |  | ☑ |  |  |
+| REGEXP |  |  |  |  |  | ☑ | ☑ |
+| REINDEX |  |  |  |  | ☑ |  | ☑ |
+| RELEASE |  | ☑ |  |  |  |  |  |
+| RENAME |  | ☑ |  |  | ☑ |  | ☑ |
+| REPEAT |  | ☑ |  |  |  |  |  |
+| REPLACE |  |  |  |  | ☑ |  | ☑ |
+| REPLICA |  |  |  |  | ☑ |  |  |
+| REPLICATION |  |  | ☑ |  |  |  |  |
+| RESET |  | ☑ |  |  | ☑ |  |  |
+| RESIGNAL |  | ☑ |  |  |  |  |  |
+| RESTART |  | ☑ |  |  |  |  |  |
+| RESTORE |  |  | ☑ |  |  |  |  |
+| RESTRICT |  |  | ☑ |  | ☑ |  | ☑ |
+| RESULT |  | ☑ |  |  |  |  |  |
+| RESULT_SET_LOCATOR |  | ☑ |  |  |  |  |  |
+| RETURN |  | ☑ | ☑ |  |  |  |  |
+| RETURNING |  |  |  |  | ☑ |  |  |
+| RETURNS |  | ☑ |  |  |  |  |  |
+| REVERT |  |  | ☑ |  |  |  |  |
+| REVOKE |  |  | ☑ |  |  |  |  |
+| RIGHT |  |  | ☑ |  |  |  |  |
+| ROLLBACK |  |  | ☑ |  |  |  |  |
+| ROUTINE |  | ☑ |  |  |  |  |  |
+| ROUTINES |  |  |  |  | ☑ |  |  |
+| ROW |  | ☑ |  |  |  |  |  |
+| ROWCOUNT |  |  | ☑ |  |  |  |  |
+| ROWGUIDCOL |  |  | ☑ |  |  |  |  |
+| ROWNUM |  |  |  |  |  | ☑ |  |
+| RRN |  | ☑ |  |  |  |  |  |
+| RULE |  |  | ☑ |  | ☑ |  |  |
+| RUN |  | ☑ |  |  |  |  |  |
+| SAVE |  |  | ☑ |  |  |  |  |
+| SAVEPOINT |  | ☑ |  |  |  |  |  |
+| SCALAR |  |  |  |  | ☑ |  |  |
+| SCHEMA |  |  | ☑ |  |  |  |  |
+| SCHEMAS |  |  |  |  | ☑ |  |  |
+| SCRATCHPAD |  | ☑ |  |  |  |  |  |
+| SECONDS |  | ☑ |  |  |  |  |  |
+| SECQTY |  | ☑ |  |  |  |  |  |
+| SECURITY |  | ☑ |  |  |  |  |  |
+| SECURITYAUDIT |  |  | ☑ |  |  |  |  |
+| SELECT |  |  | ☑ |  |  |  |  |
+| SEMANTICKEYPHRASETABLE |  |  | ☑ |  |  |  |  |
+| SEMANTICSIMILARITYDETAILSTABLE |  |  | ☑ |  |  |  |  |
+| SEMANTICSIMILARITYTABLE |  |  | ☑ |  |  |  |  |
+| SENSITIVE |  | ☑ |  |  |  |  |  |
+| SEQUENCES |  |  |  |  | ☑ |  |  |
+| SERVER |  |  |  |  | ☑ |  |  |
+| SESSION_USER |  |  | ☑ |  |  |  |  |
+| SET |  |  | ☑ |  |  |  |  |
+| SETOF |  |  |  |  | ☑ |  |  |
+| SETUSER |  |  | ☑ |  |  |  |  |
+| SHARE |  |  |  |  | ☑ |  |  |
+| SHOW |  |  |  |  | ☑ |  |  |
+| SHUTDOWN |  |  | ☑ |  |  |  |  |
+| SIGNAL |  | ☑ |  |  |  |  |  |
+| SIMPLE |  | ☑ |  |  |  |  |  |
+| SKIP |  |  |  |  | ☑ |  |  |
+| SNAPSHOT |  |  |  |  | ☑ |  |  |
+| SOME |  |  | ☑ |  |  |  |  |
+| SOURCE |  | ☑ |  |  |  |  |  |
+| SPECIFIC |  | ☑ |  |  |  |  |  |
+| SQLID |  | ☑ |  |  |  |  |  |
+| STABLE |  |  |  |  | ☑ |  |  |
+| STANDALONE |  |  |  |  | ☑ |  |  |
+| STANDARD |  | ☑ |  |  |  |  |  |
+| START |  | ☑ |  |  |  |  |  |
+| STATIC |  | ☑ |  |  |  |  |  |
+| STATISTICS |  |  | ☑ |  | ☑ |  |  |
+| STAY |  | ☑ |  |  |  |  |  |
+| STDIN |  |  |  |  | ☑ |  |  |
+| STDOUT |  |  |  |  | ☑ |  |  |
+| STOGROUP |  | ☑ |  |  |  |  |  |
+| STORAGE |  |  |  |  | ☑ |  |  |
+| STORED |  |  |  |  | ☑ |  |  |
+| STORES |  | ☑ |  |  |  |  |  |
+| STRICT |  |  |  |  | ☑ |  |  |
+| STRING |  |  |  |  | ☑ |  |  |
+| STRIP |  |  |  |  | ☑ |  |  |
+| STYLE |  | ☑ |  |  |  |  |  |
+| SUBPAGES |  | ☑ |  |  |  |  |  |
+| SUBSCRIPTION |  |  |  |  | ☑ |  |  |
+| SUPPORT |  |  |  |  | ☑ |  |  |
+| SYNONYM |  | ☑ |  |  |  |  |  |
+| SYSFUN |  | ☑ |  |  |  |  |  |
+| SYSIBM |  | ☑ |  |  |  |  |  |
+| SYSID |  |  |  |  | ☑ |  |  |
+| SYSPROC |  | ☑ |  |  |  |  |  |
+| SYSTEM |  | ☑ |  |  |  |  |  |
+| SYSTEM_USER |  |  | ☑ |  |  |  |  |
+| TABLE |  |  | ☑ |  |  |  |  |
+| TABLES |  |  |  |  | ☑ |  |  |
+| TABLESAMPLE |  |  | ☑ |  |  |  |  |
+| TABLESPACE |  | ☑ |  |  | ☑ |  |  |
+| TARGET |  |  |  |  | ☑ |  |  |
+| TEMP |  |  |  |  | ☑ |  | ☑ |
+| TEMPLATE |  |  |  |  | ☑ |  |  |
+| TEMPORARY |  |  |  |  |  |  | ☑ |
+| TEXT |  |  |  |  | ☑ |  |  |
+| TEXTSIZE |  |  | ☑ |  |  |  |  |
+| THEN |  |  | ☑ |  |  |  |  |
+| TO |  |  | ☑ |  |  |  |  |
+| TOP |  |  | ☑ |  |  | ☑ |  |
+| TRAN |  |  | ☑ |  |  |  |  |
+| TRANSACTION |  |  | ☑ |  |  |  | ☑ |
+| TRIGGER |  | ☑ | ☑ |  |  |  |  |
+| TRUNCATE |  |  | ☑ |  | ☑ |  |  |
+| TRUSTED |  |  |  |  | ☑ |  |  |
+| TRY_CONVERT |  |  | ☑ |  |  |  |  |
+| TSEQUAL |  |  | ☑ |  |  |  |  |
+| TYPE |  | ☑ |  |  |  |  |  |
+| TYPES |  |  |  |  | ☑ |  |  |
+| UNCONDITIONAL |  |  |  |  | ☑ |  |  |
+| UNDO |  | ☑ |  |  |  |  |  |
+| UNENCRYPTED |  |  |  |  | ☑ |  |  |
+| UNION |  |  | ☑ |  |  |  |  |
+| UNIQUE |  |  | ☑ |  |  |  |  |
+| UNLISTEN |  |  |  |  | ☑ |  |  |
+| UNLOGGED |  |  |  |  | ☑ |  |  |
+| UNPIVOT |  |  | ☑ |  |  |  |  |
+| UNTIL |  | ☑ |  |  | ☑ |  |  |
+| UPDATE |  |  | ☑ |  |  |  |  |
+| UPDATETEXT |  |  | ☑ |  |  |  |  |
+| USE |  |  | ☑ |  |  |  |  |
+| USER |  |  | ☑ |  |  |  |  |
+| VACUUM |  |  |  |  | ☑ |  | ☑ |
+| VALID |  |  |  |  | ☑ |  |  |
+| VALIDATE |  |  |  |  | ☑ |  |  |
+| VALIDATOR |  |  |  |  | ☑ |  |  |
+| VALIDPROC |  | ☑ |  |  |  |  |  |
+| VALUES |  |  | ☑ |  |  |  |  |
+| VARIABLE |  | ☑ |  |  |  |  |  |
+| VARIADIC |  |  |  |  | ☑ |  |  |
+| VARIANT |  | ☑ |  |  |  |  |  |
+| VARYING |  |  | ☑ |  |  |  |  |
+| VCAT |  | ☑ |  |  |  |  |  |
+| VERBOSE |  |  |  |  | ☑ |  |  |
+| VERSION |  |  |  |  | ☑ |  |  |
+| VIEW |  |  | ☑ |  |  |  | ☑ |
+| VIEWS |  |  |  |  | ☑ |  |  |
+| VIRTUAL |  |  |  |  |  |  | ☑ |
+| VOLATILE |  |  |  |  | ☑ |  |  |
+| VOLUMES |  | ☑ |  |  |  |  |  |
+| WAITFOR |  |  | ☑ |  |  |  |  |
+| WHEN |  |  | ☑ |  |  |  |  |
+| WHERE |  |  | ☑ |  |  |  |  |
+| WHILE |  | ☑ | ☑ |  |  |  |  |
+| WHITESPACE |  |  |  |  | ☑ |  |  |
+| WITH |  |  | ☑ |  |  |  |  |
+| WITHIN GROUP |  |  | ☑ |  |  |  |  |
+| WLM |  | ☑ |  |  |  |  |  |
+| WRAPPER |  |  |  |  | ☑ |  |  |
+| WRITETEXT |  |  | ☑ |  |  |  |  |
+| XML |  |  |  |  | ☑ |  |  |
+| XMLATTRIBUTES |  |  |  |  | ☑ |  |  |
+| XMLCONCAT |  |  |  |  | ☑ |  |  |
+| XMLELEMENT |  |  |  |  | ☑ |  |  |
+| XMLEXISTS |  |  |  |  | ☑ |  |  |
+| XMLFOREST |  |  |  |  | ☑ |  |  |
+| XMLNAMESPACES |  |  |  |  | ☑ |  |  |
+| XMLPARSE |  |  |  |  | ☑ |  |  |
+| XMLPI |  |  |  |  | ☑ |  |  |
+| XMLROOT |  |  |  |  | ☑ |  |  |
+| XMLSERIALIZE |  |  |  |  | ☑ |  |  |
+| XMLTABLE |  |  |  |  | ☑ |  |  |
+| YEARS |  | ☑ |  |  |  |  |  |
+| YES |  |  |  |  | ☑ |  |  |
+| _ROWID_ |  |  |  |  |  | ☑ |  |
 

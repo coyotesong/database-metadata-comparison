@@ -1,40 +1,14 @@
 package com.coyotesong.database.formatters;
 
 import com.coyotesong.database.DatabaseComparisons;
-import com.coyotesong.database.MetadataMethods;
 
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.function.Predicate;
 
 /**
  * Abstract class that formats the output - Markdown, HTML, xlsx, etc.
  */
 abstract public class AbstractOutputFormatter {
-
-    protected static final Map<String, String> DOCKER_REPOS = new LinkedHashMap<>();
-    protected static final Map<String, Map<String, String>> MAVEN_REPOS = new LinkedHashMap<>();
-
-    static {
-        DOCKER_REPOS.put("icr.io/db2_community/db2", "https://www.ibm.com/docs/en/db2/11.5?topic=deployments-db2-community-edition-docker");
-        DOCKER_REPOS.put("mysql", "https://hub.docker.com/_/mysql");
-        DOCKER_REPOS.put("gvenzl/oracle-xe", "https://hub.docker.com/r/gvenzl/oracle-xe");
-        DOCKER_REPOS.put("postgres", "https://hub.docker.com/_/postgres");
-        DOCKER_REPOS.put("mcr.microsoft.com/mssql/server", "https://mcr.microsoft.com/en-us/product/mssql/server");
-        DOCKER_REPOS.put("mcr.microsoft.com/mssql/rhel/server", "https://mcr.microsoft.com/en-us/product/mssql/rhel/server");
-
-        MAVEN_REPOS.put("com.ibm.db2.jcc.DB2Driver", Collections.singletonMap("com.ibm.db2", "jcc")); // 11.5.9.0
-        MAVEN_REPOS.put("com.mysql.cj.jdbc.Driver", Collections.singletonMap("com.mysql", "mysql-connector-j")); // 9.0.0
-        MAVEN_REPOS.put("oracle.jdbc.driver.OracleDriver", Collections.singletonMap("com.oracle.database.jdbc", "ojdbc11")); // 23.5.0.24.07
-        MAVEN_REPOS.put("org.postgresql.Driver", Collections.singletonMap("org.postgresql", "postgresql")); // 42.7.4
-        MAVEN_REPOS.put("org.h2.Driver", Collections.singletonMap("com.h2database", "h2")); // 2.3.232
-        MAVEN_REPOS.put("org.sqlite.JDBC", Collections.singletonMap("org.xerial", "sqlite-jdbc")); // 3.46.1.0
-        MAVEN_REPOS.put("com.microsoft.sqlserver.jdbc.SQLServerDriver", Collections.singletonMap("com.microsoft.sqlserver", "mssql-jdbc")); // 12.8.1.jre11
-    }
-
-    protected static final String MAVEN_REPO_FORMAT = "[%s:%s:%s](https://central.sonatype.com/artifact/%s/%s/%s)";
 
     protected final DatabaseComparisons databases;
 
@@ -67,9 +41,15 @@ abstract public class AbstractOutputFormatter {
      */
     abstract public String formatDriverTable();
 
+    abstract public String formatClientInfoProperties();
+
     abstract public String formatCatalogSchemaSupport();
 
     abstract public String formatSQLProperties();
+
+    abstract public String formatTableTypes();
+
+    abstract public String formatSqlKeywords();
 
     /**
      * Create a table header
@@ -130,9 +110,23 @@ abstract public class AbstractOutputFormatter {
             long v1KiB = 1024L;
             long v1MiB = 1024L * v1KiB;
             long v1GiB = 1024L * v1MiB;
+            long v1TiB = 1024L * v1GiB;
+            long v1PiB = 1024L * v1TiB;
 
             if (v == 0) {
                 return "";
+            } else if (v % v1PiB == 0) {
+                return Long.toString(v / v1PiB) + " PiB";
+            } else if ((v > v1PiB - 1024) && (v % v1PiB > (v1PiB - 1024L))) {
+                long vv = 1L + v / v1PiB;
+                return Long.toString(vv) + " PiB - " + (vv * v1PiB - v);
+
+            } else if (v % v1TiB == 0) {
+                return Long.toString(v / v1TiB) + " TiB";
+            } else if ((v > v1TiB - 1024) && (v % v1TiB > (v1TiB - 1024L))) {
+                long vv = 1L + v / v1TiB;
+                return Long.toString(vv) + " TiB - " + (vv * v1TiB - v);
+
             } else if (v % v1GiB == 0) {
                 return Long.toString(v / v1GiB) + " GiB";
             } else if ((v > v1GiB - 1024) && (v % v1GiB > (v1GiB - 1024L))) {
@@ -160,7 +154,7 @@ abstract public class AbstractOutputFormatter {
         } else if (value instanceof Exception) {
             return "[Ex]";
         } else {
-            return String.valueOf(value);
+            return "[" + value.getClass().getSimpleName() + "]";
         }
     }
 

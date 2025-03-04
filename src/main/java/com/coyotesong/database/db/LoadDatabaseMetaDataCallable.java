@@ -1,7 +1,7 @@
 package com.coyotesong.database.db;
 
 import com.coyotesong.database.Database;
-import com.coyotesong.database.MyDatabaseMetaData;
+import com.coyotesong.database.sql.ExtendedDatabaseMetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -16,21 +16,21 @@ import java.util.concurrent.Callable;
 /**
  * Thread to launch a docker container and capture the database's metadata
  */
-public class LoadDatabaseMetaDataCallable implements Callable<MyDatabaseMetaData> {
+public class LoadDatabaseMetaDataCallable implements Callable<ExtendedDatabaseMetaData> {
     private static final Logger LOG = LoggerFactory.getLogger(LoadDatabaseMetaDataCallable.class);
 
     private final Database database;
-    private final MyDatabaseMetaData metadata;
+    private final ExtendedDatabaseMetaData metadata;
 
     public LoadDatabaseMetaDataCallable(Database database) {
         this.database = database;
-        this.metadata = new MyDatabaseMetaData(database);
+        this.metadata = new ExtendedDatabaseMetaData(database);
     }
 
     /**
      * {@inheritDoc}
      */
-    public MyDatabaseMetaData call() throws SQLException {
+    public ExtendedDatabaseMetaData call() throws SQLException {
         try (JdbcDatabaseContainer<?> db = newContainer()) {
 
             // start server

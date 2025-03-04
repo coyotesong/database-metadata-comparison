@@ -13,9 +13,26 @@ import java.util.List;
 /**
  * List of tested databases
  * <p>
+ * Supported databases need at least two things:
+ * <ul>
+ *    <li>Docker image name - can find location in ExternalResources</li>
+ *    <li>"asCompatibleSubstituteFor()" - so we can use our own docker image + version</li>
+ *    <li>optional properties, typically acceptance of the EULA</li>
+ * </ul>
+ * </p>
+ * <p>
+ * The annotations also contain a commented list of database ports. We can generally
+ * ignore them since the docker container will use a random port.
+ * </p>
+ * <p>
  * Implementation details are kept in an augmented enumeration, not a conventional POJO object,
  * since the details are so integral to the enumerated value. Changing the properties can break
  * existing software so it should not be done lightly!
+ * </p>
+ * <p>
+ * TODO: move initialization from constructor to runtime loader tied to a '@Configuration'
+ * class.
+ * </p>
  */
 public enum Database {
     // Azure?

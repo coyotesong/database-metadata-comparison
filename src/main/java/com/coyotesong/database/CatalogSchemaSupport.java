@@ -1,15 +1,15 @@
 package com.coyotesong.database;
 
+import com.coyotesong.database.sql.NullSortPosition;
+import com.coyotesong.database.sql.SQLGrammar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.sql.*;
+import java.util.*;
 
 public class CatalogSchemaSupport {
     private static final Logger LOG = LoggerFactory.getLogger(CatalogSchemaSupport.class);
@@ -143,4 +143,5 @@ public class CatalogSchemaSupport {
 
         return support;
     }
+
 }

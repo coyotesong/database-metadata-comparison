@@ -1,5 +1,7 @@
 package com.coyotesong.database;
 
+import com.coyotesong.database.sql.ExtendedDatabaseMetaData;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -16,7 +18,7 @@ public class MergedPropertyValues {
      * @param propertyName property name
      * @param databases scanned databases
      */
-    public MergedPropertyValues(final String propertyName, Map<Database, MyDatabaseMetaData> databases) {
+    public MergedPropertyValues(final String propertyName, Map<Database, ExtendedDatabaseMetaData> databases) {
         this.propertyName = propertyName;
 
         // this ensures the values are always provided in the same order.

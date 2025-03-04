@@ -1,12 +1,14 @@
-package com.coyotesong.database;
+package com.coyotesong.database.sql;
 
+import com.coyotesong.database.CatalogSchemaSupport;
+import com.coyotesong.database.Database;
+import com.coyotesong.database.MetadataMethods;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.sql.*;
 import java.util.*;
 
@@ -16,8 +18,8 @@ import java.util.*;
  * Proper testing of this class would probably require {@code Proxy<DatabaseMetaData>} or
  * adding a hefty additional dependency.
  */
-public class MyDatabaseMetaData {
-    private static final Logger LOG = LoggerFactory.getLogger(MyDatabaseMetaData.class);
+public class ExtendedDatabaseMetaData {
+    private static final Logger LOG = LoggerFactory.getLogger(ExtendedDatabaseMetaData.class);
 
     private final Database database;
     private Properties clientInfo;
@@ -32,6 +34,14 @@ public class MyDatabaseMetaData {
     private String driverClassName;
     private String dockerImageName;
     private String jdbcUrl;
+    private List<String> clientInfoProperties = new ArrayList<>();
+
+    private TransactionIsolation defaultTransactionIsolation;
+    private ResultSetHoldability resultSetHoldability;
+    private RowIdLifetime rowIdLifetime;
+    private SQLStateType sqlStateType;
+
+    private List<String> tableTypes = new ArrayList<>();
 
     private List<String> numericFunctions;
     private List<String> sqlKeywords;
@@ -44,11 +54,14 @@ public class MyDatabaseMetaData {
     private IdentifierStorage identifierStorage = IdentifierStorage.UNKNOWN;
     private IdentifierStorage quotedIdentifierStorage = IdentifierStorage.UNKNOWN;
 
-    public MyDatabaseMetaData(Database database) {
+    private String catalogSeparator;
+
+
+    public ExtendedDatabaseMetaData(Database database) {
         this.database = database;
     }
 
-    public MyDatabaseMetaData(Database database, String driverClassName) {
+    public ExtendedDatabaseMetaData(Database database, String driverClassName) {
         this(database);
         this.driverClassName = driverClassName;
     }
@@ -91,6 +104,62 @@ public class MyDatabaseMetaData {
 
     public void setJdbcUrl(String jdbcUrl) {
         this.jdbcUrl = jdbcUrl;
+    }
+
+    public List<String> getClientInfoProperties() {
+        return clientInfoProperties;
+    }
+
+    public void setClientInfoProperties(List<String> clientInfoProperties) {
+        this.clientInfoProperties = clientInfoProperties;
+    }
+
+    public TransactionIsolation getDefaultTransactionIsolation() {
+        return defaultTransactionIsolation;
+    }
+
+    public void setDefaultTransactionIsolation(TransactionIsolation defaultTransactionIsolation) {
+        this.defaultTransactionIsolation = defaultTransactionIsolation;
+    }
+
+    public ResultSetHoldability getResultSetHoldability() {
+        return resultSetHoldability;
+    }
+
+    public void setResultSetHoldability(ResultSetHoldability resultSetHoldability) {
+        this.resultSetHoldability = resultSetHoldability;
+    }
+
+    public RowIdLifetime getRowIdLifetime() {
+        return rowIdLifetime;
+    }
+
+    public void setRowIdLifetime(RowIdLifetime rowIdLifetime) {
+        this.rowIdLifetime = rowIdLifetime;
+    }
+
+    public SQLStateType getSQLStateType() {
+        return sqlStateType;
+    }
+
+    public void setSQLStateType(SQLStateType sqlStateType) {
+        this.sqlStateType = sqlStateType;
+    }
+
+    public List<String> getTableTypes() {
+        return tableTypes;
+    }
+
+    public void setTableTypes(List<String> tableTypes) {
+        this.tableTypes = tableTypes;
+    }
+
+    public String getCatalogSeparator() {
+        return catalogSeparator;
+    }
+
+    public void setCatalogSeparator(String catalogSeparator) {
+        this.catalogSeparator = catalogSeparator;
     }
 
     public String getDockerImageName() {
@@ -191,9 +260,14 @@ public class MyDatabaseMetaData {
     }
 
     private void put(Method m, DatabaseMetaData md) {
-        properties.put(m.getName(), invoke(m, md));
+        final Object obj = invoke(m, md);
+
+        // error handling may have already put a value into the properties map.
+        if (!properties.containsKey(m.getName())) {
+            properties.put(m.getName(), obj);
+        }
     }
-    
+
     private void put(Method m, Object obj) {
         properties.put(m.getName(), obj);
     }
@@ -209,11 +283,12 @@ public class MyDatabaseMetaData {
                     url = md.getDatabaseProductName();
                 } catch (SQLException sqle) {
                     LOG.warn("{}: {}", sqle.getClass().getName(), sqle.getMessage());
+                    put(m, cause);
                 }
 
                 if (SQLFeatureNotSupportedException.class.isAssignableFrom(cause.getClass())) {
                     LOG.warn("{}: {}: {}", cause.getClass().getName(), m.getName(), cause.getMessage());
-                    put(m, "not supported");
+                    put(m, "[not supported]");
                 } else if (SQLException.class.isAssignableFrom(cause.getClass())) {
                     LOG.warn("{}: {}: {}", cause.getClass().getName(), m.getName(), cause.getMessage());
                     put(m, cause);
@@ -233,7 +308,7 @@ public class MyDatabaseMetaData {
             }
         } catch (IllegalAccessException e) {
             LOG.warn("Unable to access {}#{}: {}", m.getDeclaringClass().getName(), m.getName(), e.getMessage());
-            put(m, e);
+            put(m, "[no access]");
         }
 
         return null;
@@ -288,6 +363,25 @@ public class MyDatabaseMetaData {
 
         this.jdbcUrl = md.getURL();
 
+        try (ResultSet rs = md.getClientInfoProperties()) {
+            while (rs.next()) {
+                clientInfoProperties.add(rs.getString(1));
+            }
+            Collections.sort(clientInfoProperties);
+        } catch (SQLFeatureNotSupportedException e) {
+            LOG.info("{}: clientInfoProperties not supported", databaseProductName);
+        } catch (SQLException e) {
+            LOG.warn("{}: {}", e.getClass().getName(), e.getMessage());
+        }
+
+        try (ResultSet rs = md.getTableTypes()) {
+            while (rs.next()) {
+                tableTypes.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            LOG.warn("{}: {}", e.getClass().getName(), e.getMessage());
+        }
+
         this.numericFunctions = new ArrayList(Arrays.stream(md.getNumericFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
         Collections.sort(this.numericFunctions);
 
@@ -311,6 +405,14 @@ public class MyDatabaseMetaData {
         this.sqlGrammar = SQLGrammar.valueOf(md);
         this.identifierStorage = IdentifierStorage.valueOf(md);
         this.quotedIdentifierStorage = IdentifierStorage.quotedValueOf(md);
+
+        // this provides a bit of isolation...
+        this.defaultTransactionIsolation = TransactionIsolation.valueOf(md.getDefaultTransactionIsolation());
+        this.resultSetHoldability = ResultSetHoldability.valueOf(md.getResultSetHoldability());
+        this.rowIdLifetime = RowIdLifetime.valueOf(md);
+        this.sqlStateType = SQLStateType.valueOf(md.getSQLStateType());
+
+        this.catalogSeparator = md.getCatalogSeparator();
 
         final Class<? extends DatabaseMetaData> clz = md.getClass();
         final Method[] methods = clz.getMethods();

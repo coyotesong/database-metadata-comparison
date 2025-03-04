@@ -12,6 +12,7 @@ public class MarkdownFormatterTest {
         MAVEN_REPOS.put("com.ibm.db2.jcc.DB2Driver", Collections.singletonMap("com.ibm.db2", "jcc")); // 11.5.9.0
      */
 
+    /*
     @Test
     public void testGetDockerRepo() {
         final MarkdownFormatter formatter = new MarkdownFormatter();
@@ -31,4 +32,5 @@ public class MarkdownFormatterTest {
             //assertThat(url, equalTo(AbstractOutputFormatter.DOCKER_REPOS.get(unversionedName)));
         }
     }
+     */
 }
