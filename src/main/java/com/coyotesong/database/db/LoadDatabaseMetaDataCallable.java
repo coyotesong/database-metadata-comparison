@@ -4,6 +4,7 @@ import com.coyotesong.database.Database;
 import com.coyotesong.database.sql.ExtendedDatabaseMetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -31,10 +32,13 @@ public class LoadDatabaseMetaDataCallable implements Callable<ExtendedDatabaseMe
      * {@inheritDoc}
      */
     public ExtendedDatabaseMetaData call() throws SQLException {
+        MDC.MDCCloseable mdc0 = MDC.putCloseable("database", database.name());
+        MDC.MDCCloseable mdc1 = MDC.putCloseable("dockerImageName", database.getImageName().asCanonicalNameString());
         try (JdbcDatabaseContainer<?> db = newContainer()) {
 
             // start server
             db.start();
+            mdc1 = MDC.putCloseable("containerId", db.getContainerName());
 
             metadata.setDriverClassName(db.getDriverClassName());
             metadata.setDockerImageName(db.getDockerImageName());
@@ -50,6 +54,9 @@ public class LoadDatabaseMetaDataCallable implements Callable<ExtendedDatabaseMe
         } catch (SQLException e) {
             trace(e);
             throw e;
+        } finally {
+            mdc1.close();
+            mdc0.close();
         }
     }
 
@@ -81,7 +88,7 @@ public class LoadDatabaseMetaDataCallable implements Callable<ExtendedDatabaseMe
      */
     private JdbcDatabaseContainer<?> newContainer() throws SQLException {
         try {
-            JdbcDatabaseContainer<?> db = null;
+            JdbcDatabaseContainer<?> db;
             if (database.getImageName() == null) {
                 final Constructor<?> ctor = database.getContainerClass().getConstructor();
                 db = (JdbcDatabaseContainer<?>) ctor.newInstance();
