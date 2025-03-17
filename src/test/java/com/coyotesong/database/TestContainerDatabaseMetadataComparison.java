@@ -1,7 +1,7 @@
 package com.coyotesong.database;
 
 import com.coyotesong.database.config.ExternalRepositories;
-import com.coyotesong.database.formatters.MarkdownFormatter;
+import com.coyotesong.database.formatters.Jinja2Formatter;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,31 +32,25 @@ public class TestContainerDatabaseMetadataComparison {
 
 
     @Test
-    public void test() throws SQLException, InterruptedException {
+    public void test() throws SQLException, IOException, InterruptedException {
         final DatabaseComparisons databases = new DatabaseComparisons();
         databases.initialize();
         LOG.info("statistics:\n{}", MetadataMethods.INSTANCE.toString());
 
-        MarkdownFormatter md = new MarkdownFormatter(repos, databases);
+        // MarkdownFormatter md = new MarkdownFormatter(repos, databases);
+        Jinja2Formatter md = new Jinja2Formatter(repos, databases);
 
         // try (StringWriter w = new StringWriter();
         try (Writer w = new FileWriter("/tmp/database-comparison.md");
              PrintWriter pw = new PrintWriter(w)) {
-            pw.println("## Product Summary");
-            pw.println(md.formatSummaryTable());
 
-            pw.println();
-            pw.println("## Docker Images");
-            pw.println(md.formatDockerImageTable());
+            md.formatGeneral(pw);
+            pw.flush();
+        } catch (IOException e) {
+            LOG.error("{}: {}", e.getClass().getName(), e.getMessage(), e);
+        }
 
-            pw.println();
-            pw.println("## Drivers");
-            pw.println(md.formatDriverTable());
-
-            pw.println();
-            pw.println("## ClientInfo Properties");
-            pw.println(md.formatClientInfoProperties());
-
+            /*
             pw.println();
             pw.println("## Catalog and Schema Support");
             pw.println(md.formatCatalogSchemaSupport());
@@ -100,11 +94,11 @@ public class TestContainerDatabaseMetadataComparison {
             pw.println();
             pw.println("## SQL Keywords");
             pw.println(md.formatSqlKeywords());
+             */
+       /*
 
             pw.flush();
             // LOG.info(w.toString());
-        } catch (IOException e) {
-            LOG.error("{}: {}", e.getClass().getName(), e.getMessage(), e);
-        }
+        */
     }
 }

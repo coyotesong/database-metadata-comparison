@@ -1,6 +1,7 @@
 package com.coyotesong.database;
 
-import com.coyotesong.database.sql.ExtendedDatabaseMetaData;
+import com.coyotesong.database.sql.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +10,7 @@ import java.util.*;
 /**
  * Merged database information
  */
-public class DatabaseComparisons {
+public class DatabaseComparisons implements Iterable<ExtendedDatabaseMetaData> {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseComparisons.class);
 
     private final Map<Database, ExtendedDatabaseMetaData> databases = new LinkedHashMap<>();
@@ -18,8 +19,7 @@ public class DatabaseComparisons {
 
     private final Map<String, MergedPropertyValues> mergedProperties = new LinkedHashMap<>();
 
-    private final TableTypesPivot tableTypes = new TableTypesPivot();
-    private final SqlKeywordsPivot sqlKeywords = new SqlKeywordsPivot();
+    private final Pivots pivots = new Pivots();
 
 
     /**
@@ -30,8 +30,7 @@ public class DatabaseComparisons {
         databaseScanner.scanDatabases();
 
         for (ExtendedDatabaseMetaData md : databases.values()) {
-            tableTypes.addDatabase(md);
-            sqlKeywords.addDatabase(md);
+            pivots.addDatabase(md);
         }
 
         final Set<String> keySet = new HashSet<>();
@@ -59,12 +58,32 @@ public class DatabaseComparisons {
         return databases.get(database);
     }
 
-    public TableTypesPivot getTableTypes() {
-        return tableTypes;
+    public List<String> getTableTypes() {
+        return pivots.getTableTypes();
     }
 
-    public SqlKeywordsPivot getSqlKeywords() {
-        return sqlKeywords;
+    public List<String> getSqlKeywords() {
+        return pivots.getSqlKeywords();
+    }
+
+    public List<String> getNumericFunctions() {
+        return pivots.getNumericFunctions();
+    }
+
+    public List<String> getStringFunctions() {
+        return pivots.getStringFunctions();
+    }
+
+    public List<String> getSystemFunctions() {
+        return pivots.getSystemFunctions();
+    }
+
+    public List<String> getTemporalFunctions() {
+        return pivots.getTemporalFunctions();
+    }
+
+    public List<TypeInfo> getTypes() {
+        return pivots.getTypes();
     }
 
     public Collection<ExtendedDatabaseMetaData> values() {
@@ -101,5 +120,10 @@ public class DatabaseComparisons {
 
     public Set<Map.Entry<Database, ExtendedDatabaseMetaData>> entrySet() {
         return databases.entrySet();
+    }
+
+    @NotNull
+    public Iterator<ExtendedDatabaseMetaData> iterator() {
+        return databases.values().iterator();
     }
 }

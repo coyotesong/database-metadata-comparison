@@ -3,9 +3,11 @@ package com.coyotesong.database.sql;
 import com.coyotesong.database.CatalogSchemaSupport;
 import com.coyotesong.database.Database;
 import com.coyotesong.database.MetadataMethods;
+import com.coyotesong.database.config.ExternalRepositories;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
+import org.testcontainers.utility.DockerImageName;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -20,6 +22,10 @@ import java.util.*;
  */
 public class ExtendedDatabaseMetaData {
     private static final Logger LOG = LoggerFactory.getLogger(ExtendedDatabaseMetaData.class);
+
+    private static final String MAVEN_REPO_FORMAT = "[%s:%s:%s](https://central.sonatype.com/artifact/%s/%s/%s)";
+
+    private final ExternalRepositories repos;
 
     private final Database database;
     private Properties clientInfo;
@@ -42,27 +48,41 @@ public class ExtendedDatabaseMetaData {
     private SQLStateType sqlStateType;
 
     private List<String> tableTypes = new ArrayList<>();
-
     private List<String> numericFunctions;
     private List<String> sqlKeywords;
     private List<String> stringFunctions;
     private List<String> systemFunctions;
     private List<String> temporalFunctions;
 
+    private List<TypeInfo> types = new ArrayList<>();
+
     private NullSortPosition nullSortPosition = NullSortPosition.UNKNOWN;
     private SQLGrammar sqlGrammar = SQLGrammar.UNKNOWN;
     private IdentifierStorage identifierStorage = IdentifierStorage.UNKNOWN;
     private IdentifierStorage quotedIdentifierStorage = IdentifierStorage.UNKNOWN;
-
+    private String catalogTerm;
     private String catalogSeparator;
-
+    private String extraNameCharacters;
+    private String identifierQuoteString;
+    private String procedureTerm;
+    private String schemaTerm;
+    private String searchStringEscape;
 
     public ExtendedDatabaseMetaData(Database database) {
         this.database = database;
+        this.repos = new ExternalRepositories();
     }
 
     public ExtendedDatabaseMetaData(Database database, String driverClassName) {
         this(database);
+        this.driverClassName = driverClassName;
+    }
+
+    public void setDockerImageName(String dockerImageName) {
+        this.dockerImageName = dockerImageName;
+    }
+
+    public void setDriverClassName(String driverClassName) {
         this.driverClassName = driverClassName;
     }
 
@@ -82,6 +102,10 @@ public class ExtendedDatabaseMetaData {
         return databaseMajorVersion;
     }
 
+    public String getDockerImageName() {
+        return dockerImageName;
+    }
+
     public String getDriverName() {
         return driverName;
     }
@@ -94,112 +118,64 @@ public class ExtendedDatabaseMetaData {
         return driverClassName;
     }
 
-    public void setDriverClassName(String driverClassName) {
-        this.driverClassName = driverClassName;
-    }
-
-    public String getJdbcUrl() {
-        return jdbcUrl;
-    }
-
-    public void setJdbcUrl(String jdbcUrl) {
-        this.jdbcUrl = jdbcUrl;
-    }
-
     public List<String> getClientInfoProperties() {
         return clientInfoProperties;
-    }
-
-    public void setClientInfoProperties(List<String> clientInfoProperties) {
-        this.clientInfoProperties = clientInfoProperties;
     }
 
     public TransactionIsolation getDefaultTransactionIsolation() {
         return defaultTransactionIsolation;
     }
 
-    public void setDefaultTransactionIsolation(TransactionIsolation defaultTransactionIsolation) {
-        this.defaultTransactionIsolation = defaultTransactionIsolation;
-    }
-
     public ResultSetHoldability getResultSetHoldability() {
         return resultSetHoldability;
-    }
-
-    public void setResultSetHoldability(ResultSetHoldability resultSetHoldability) {
-        this.resultSetHoldability = resultSetHoldability;
     }
 
     public RowIdLifetime getRowIdLifetime() {
         return rowIdLifetime;
     }
 
-    public void setRowIdLifetime(RowIdLifetime rowIdLifetime) {
-        this.rowIdLifetime = rowIdLifetime;
+    public SQLGrammar getSqlGrammar() {
+        return sqlGrammar;
     }
 
-    public SQLStateType getSQLStateType() {
+    public SQLStateType getSqlStateType() {
         return sqlStateType;
-    }
-
-    public void setSQLStateType(SQLStateType sqlStateType) {
-        this.sqlStateType = sqlStateType;
     }
 
     public List<String> getTableTypes() {
         return tableTypes;
     }
 
-    public void setTableTypes(List<String> tableTypes) {
-        this.tableTypes = tableTypes;
+    public List<String> getSqlKeywords() {
+        return sqlKeywords;
     }
 
-    public String getCatalogSeparator() {
-        return catalogSeparator;
+    public List<String> getNumericFunctions() {
+        return numericFunctions;
     }
 
-    public void setCatalogSeparator(String catalogSeparator) {
-        this.catalogSeparator = catalogSeparator;
+    public List<String> getStringFunctions() {
+        return stringFunctions;
     }
 
-    public String getDockerImageName() {
-        return dockerImageName;
+    public List<String> getSystemFunctions() {
+        return systemFunctions;
     }
 
-    public void setDockerImageName(String dockerImageName) {
-        this.dockerImageName = dockerImageName;
+    public List<TypeInfo> getTypes() {
+        return types;
     }
 
     public IdentifierStorage getIdentifierStorage() {
         return identifierStorage;
     }
 
-    public void setIdentifierStorage(IdentifierStorage identifierStorage) {
-        this.identifierStorage = identifierStorage;
-    }
-
     public IdentifierStorage getQuotedIdentifierStorage() {
         return quotedIdentifierStorage;
     }
 
-    public void setQuotedIdentifierStorage(IdentifierStorage quotedIdentifierStorage) {
-        this.quotedIdentifierStorage = quotedIdentifierStorage;
-    }
-
     public NullSortPosition getNullSortPosition() {
         return nullSortPosition;
-    }
-
-    public void setNullSortPosition(NullSortPosition nullSortPosition) {
-        this.nullSortPosition = nullSortPosition;
-    }
-
-    public SQLGrammar getSqlGrammar() {
-        return sqlGrammar;
-    }
-
-    public void setSqlGrammar(SQLGrammar sqlGrammar) {
-        this.sqlGrammar = sqlGrammar;
     }
 
     public CatalogSchemaSupport getCatalogSchemaSupport() {
@@ -210,40 +186,32 @@ public class ExtendedDatabaseMetaData {
         return temporalFunctions;
     }
 
-    public void setTemporalFunctions(List<String> temporalFunctions) {
-        this.temporalFunctions = temporalFunctions;
+    public String getCatalogSeparator() {
+        return catalogSeparator;
     }
 
-    public List<String> getSystemFunctions() {
-        return systemFunctions;
+    public String getCatalogTerm() {
+        return catalogTerm;
     }
 
-    public void setSystemFunctions(List<String> systemFunctions) {
-        this.systemFunctions = systemFunctions;
+    public String getExtraNameCharacters() {
+        return extraNameCharacters;
     }
 
-    public List<String> getStringFunctions() {
-        return stringFunctions;
+    public String getIdentifierQuoteString() {
+        return identifierQuoteString;
     }
 
-    public void setStringFunctions(List<String> stringFunctions) {
-        this.stringFunctions = stringFunctions;
+    public String getProcedureTerm() {
+        return procedureTerm;
     }
 
-    public List<String> getSqlKeywords() {
-        return sqlKeywords;
+    public String getSchemaTerm() {
+        return schemaTerm;
     }
 
-    public void setSqlKeywords(List<String> sqlKeywords) {
-        this.sqlKeywords = sqlKeywords;
-    }
-
-    public List<String> getNumericFunctions() {
-        return numericFunctions;
-    }
-
-    public void setNumericFunctions(List<String> numericFunctions) {
-        this.numericFunctions = numericFunctions;
+    public String getSearchStringEscape() {
+        return searchStringEscape;
     }
 
     public boolean containsKey(String key) {
@@ -314,22 +282,6 @@ public class ExtendedDatabaseMetaData {
         return null;
     }
 
-    public String getCatalogTerm() {
-        final String value = (String) get("getCatalogTerm");
-        if (StringUtils.isBlank(value)) {
-            return "_";
-        }
-        return value;
-    }
-
-    public String getSchemaTerm() {
-        final String value = (String) get("getSchemaTerm");
-        if (StringUtils.isBlank(value)) {
-            return "_";
-        }
-        return value;
-    }
-
     /**
      * Extract Connection metadata
      *
@@ -382,19 +334,24 @@ public class ExtendedDatabaseMetaData {
             LOG.warn("{}: {}", e.getClass().getName(), e.getMessage());
         }
 
-        this.numericFunctions = new ArrayList(Arrays.stream(md.getNumericFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        try (ResultSet rs = md.getTypeInfo()) {
+            while (rs.next()) {
+                types.add(new TypeInfo(rs.getString("TYPE_NAME"), rs.getInt("DATA_TYPE"), rs.getInt("PRECISION"), rs.getBoolean("AUTO_INCREMENT")));
+            }
+        }
+        this.numericFunctions = new ArrayList<>(Arrays.stream(md.getNumericFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
         Collections.sort(this.numericFunctions);
 
-        this.sqlKeywords = new ArrayList(Arrays.stream(md.getSQLKeywords().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        this.sqlKeywords = new ArrayList<>(Arrays.stream(md.getSQLKeywords().split(",")).map(String::trim).map(String::toUpperCase).toList());
         Collections.sort(this.sqlKeywords);
 
-        this.stringFunctions = new ArrayList(Arrays.stream(md.getStringFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        this.stringFunctions = new ArrayList<>(Arrays.stream(md.getStringFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
         Collections.sort(this.stringFunctions);
 
-        this.systemFunctions = new ArrayList(Arrays.stream(md.getSystemFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        this.systemFunctions = new ArrayList<>(Arrays.stream(md.getSystemFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
         Collections.sort(this.systemFunctions);
 
-        this.temporalFunctions = new ArrayList(Arrays.stream(md.getTimeDateFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
+        this.temporalFunctions = new ArrayList<>(Arrays.stream(md.getTimeDateFunctions().split(",")).map(String::trim).map(String::toUpperCase).toList());
         Collections.sort(this.temporalFunctions);
 
         // put("getDefaultTransactionIsolation", getDefaultTransactionIsolation(md));
@@ -413,6 +370,12 @@ public class ExtendedDatabaseMetaData {
         this.sqlStateType = SQLStateType.valueOf(md.getSQLStateType());
 
         this.catalogSeparator = md.getCatalogSeparator();
+        this.catalogTerm = md.getCatalogTerm();
+        this.extraNameCharacters = md.getExtraNameCharacters();
+        this.identifierQuoteString = md.getIdentifierQuoteString();
+        this.procedureTerm = md.getProcedureTerm();
+        this.schemaTerm = md.getSchemaTerm();
+        this.searchStringEscape = md.getSearchStringEscape();
 
         final Class<? extends DatabaseMetaData> clz = md.getClass();
         final Method[] methods = clz.getMethods();
@@ -537,5 +500,53 @@ public class ExtendedDatabaseMetaData {
             LOG.info("{}: {}", e.getClass().getName(), e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * Get Maven Coordinates from driver classname and version
+     *
+     * @return maven coordinates
+     */
+    public String getMavenCoordinates() {
+        if (StringUtils.isBlank(driverClassName)) {
+            return "";
+        }
+
+        if (!repos.getMavenRepos().containsKey(driverClassName)) {
+            return "unknown";
+        }
+
+        final Map.Entry<String, String> entry = repos.getMavenRepos().get(driverClassName).entrySet().iterator().next();
+        final String groupId = entry.getKey();
+        final String artifactId = entry.getKey();
+        return (MAVEN_REPO_FORMAT.formatted(
+                groupId, artifactId, driverVersion,
+                groupId, artifactId, driverVersion));
+    }
+
+    public String getDockerRepo() {
+        if (dockerImageName == null) {
+            return "alpine:latest";
+        }
+
+        final DockerImageName actual = DockerImageName.parse(dockerImageName);
+        final String unversionedPart = actual.getUnversionedPart();
+        if (repos.getDockerRepos().containsKey(unversionedPart)) {
+            return String.format("[%s:%s](%s:%s)", unversionedPart, actual.getVersionPart(),
+                    repos.getDockerRepos().get(unversionedPart), actual.getVersionPart());
+        }
+        return actual.asCanonicalNameString();
+    }
+
+    public String getCatSchemaTerm() {
+        switch (catalogSchemaSupport.getSupport(CatalogSchemaSupport.Operation.TABLE_DEFINITIONS)) {
+            case CATALOGS_ONLY:
+                return String.format("%s%stable", catalogTerm, catalogSeparator);
+            case SCHEMAS_ONLY:
+                return String.format("%s%stable", schemaTerm, catalogSeparator);
+            case BOTH:
+                return String.format("%s%s%s%stable", catalogTerm, catalogSeparator, schemaTerm, catalogSeparator);
+        }
+        return null;
     }
 }

@@ -1,0 +1,41 @@
+-- create view channel_categories_view as
+--    with s as (select c.channel_id, array_agg(tc.label) as categories from channel as c join channel_topic_categories t on (c.channel_id = t.channel_id) join topic_categories tc on (t.topic_category_id = tc.id) group by c.channel_id)
+--    select s.*, cardinality(s.categories) as cardinality, c.title, c.custom_url from s join channel c on (c.channel_id = s.channel_id);
+--
+-- create view video_categories_view as
+--    with s as (select v.video_id, array_agg(tc.label) as categories from video as v join video_topic_categories t on (v.video_id = t.video_id) join topic_categories tc on (t.topic_category_id = tc.id) group by v.video_id)
+--    select s.*, cardinality(s.categories) as cardinality, v.title, v.channel_title from s join video v on (v.video_id = s.video_id);
+--
+-- with s as (select channel_id from channel where lower(title) like '%trek%' or lower(custom_url) like '%trek%')
+--    insert into channel_topic_categories(channel_id, topic_category_id) select s.channel_id, 60 from s;
+--
+-- with s as (select channel_id from channel where lower(title) like '%star wars%' or lower(title) like '%starwars%' or lower(title) like '%darth%' or lower(custom_url) like '%star wars%' or lower(custom_url) like '%starwars%')
+--    insert into channel_topic_categories(channel_id, topic_category_id) select s.channel_id, 61 from s;
+--
+-- with s as (select channel_id from channel where lower(title) like '%history%' or lower(title) like '%historie%' or lower(custom_url) like '%history%' or lower(custom_url) like '%historie%')
+-- insert into channel_topic_categories(channel_id, topic_category_id) select s.channel_id, 62 from s;
+--
+-- -- only 4!
+-- with s as (select channel_id from channel where lower(title) like '%harry potter%' or lower(title) like '%harrypotter%' or lower(custom_url) like '%harry potter%' or lower(custom_url) like '%harrypotter%')
+-- insert into channel_topic_categories(channel_id, topic_category_id) select s.channel_id, 73 from s;
+--
+-- select * from channel_categories_view where not (categories && '{"Star Trek"}') order by cardinality desc;
+--
+-- with s as (select count(1) as cnt, channel_id from playlist_items group by channel_id),
+--      t as (select s.cnt, s.channel_id, tc.label from s natural join channel_topic_categories as ctc join topic_categories as tc on (ctc.topic_category_id = tc.id))
+--      select cnt, c.title, c.custom_url, array_agg(label) as categories from channel as c natural join t group by cnt, title, custom_url order by cnt desc;
+--
+-- delete from channel_topic_categories where channel_id in (
+-- 'UCD5B6VoXv41fJ-IW8Wrhz9A',
+-- 'UC1yNl2E66ZzKApQdRuTQ4tw',
+-- 'UC7DdEm33SyaTDtWYGO2CwdA',
+-- 'UCciQ8wFcVoIIMi-lfu8-cjQ');
+--
+-- insert into channel_topic_categories(channel_id, topic_category_id) values ('UCD5B6VoXv41fJ-IW8Wrhz9A',64),
+--                                                                            ('UC1yNl2E66ZzKApQdRuTQ4tw',64),
+--                                                                            ('UC7DdEm33SyaTDtWYGO2CwdA',64),
+--                                                                            ('UCciQ8wFcVoIIMi-lfu8-cjQ',64);
+--
+--
+--
+--

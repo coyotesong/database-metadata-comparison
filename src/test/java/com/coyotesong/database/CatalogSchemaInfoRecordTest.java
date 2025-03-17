@@ -8,7 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test
  */
-public class CatalogSchemaInfoTest {
+public class CatalogSchemaInfoRecordTest {
 
     @Test
     public void testEmpty() {

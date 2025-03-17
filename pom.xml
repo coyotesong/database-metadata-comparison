@@ -15,6 +15,9 @@
 
         <slf4j.version>2.0.7</slf4j.version>
         <log4j2.version>2.20.0</log4j2.version>
+        <jinjava.version>2.7.4</jinjava.version>
+
+        <flyway.version>11.4.0</flyway.version>
 
         <testcontainer.version>1.18.3</testcontainer.version>
         <junit5.version>5.8.2</junit5.version>
@@ -67,7 +70,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.5.4</version>
+                <version>42.7.5</version>
             </dependency>
             <dependency>
                 <groupId>com.yugabyte</groupId>
@@ -124,6 +127,55 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>yugabytedb</artifactId>
                 <version>${testcontainer.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.hubspot.jinjava</groupId>
+                <artifactId>jinjava</artifactId>
+                <version>${jinjava.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>6.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-db2</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-oracle</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <!--
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-yugabytedb</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            -->
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-mysql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-sqlserver</artifactId>
+                <version>${flyway.version}</version>
             </dependency>
 
             <!-- TEST DEPENDENCIES -->
@@ -246,6 +298,53 @@
             <version>23.3.0-0</version> <!-- 12.0.4-0 -->
         </dependency>
 
+        <dependency>
+            <groupId>com.hubspot.jinjava</groupId>
+            <artifactId>jinjava</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <!-- <optional>true</optional> -->
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <!-- <optional>true</optional> -->
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-db2</artifactId>
+            <!-- <optional>true</optional> -->
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-oracle</artifactId>
+            <!-- <optional>true</optional> -->
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <!-- <optional>true</optional> -->
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-yugabytedb</artifactId>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+            <!-- <optional>true</optional> -->
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-sqlserver</artifactId>
+            <!-- <optional>true</optional> -->
+        </dependency>
+
         <!-- TEST DEPENDENCIES -->
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -271,6 +370,7 @@
         </dependency>
 
         <!-- temporary... -->
+        <!--
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>itextpdf</artifactId>
@@ -281,6 +381,7 @@
             <artifactId>pdfbox</artifactId>
             <version>3.0.0</version>
         </dependency>
+        -->
     </dependencies>
 
     <build>

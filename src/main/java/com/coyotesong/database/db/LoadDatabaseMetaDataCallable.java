@@ -1,7 +1,16 @@
 package com.coyotesong.database.db;
 
 import com.coyotesong.database.Database;
+import com.coyotesong.database.erd.ErdDotFileGenerator;
 import com.coyotesong.database.sql.ExtendedDatabaseMetaData;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
+import org.flywaydb.core.api.output.MigrateResult;
+import org.flywaydb.core.api.resolver.MigrationResolver;
+import org.flywaydb.core.api.resolver.ResolvedMigration;
+import org.flywaydb.core.extensibility.MigrationType;
+import org.flywaydb.core.extensibility.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -10,8 +19,10 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 
 /**
@@ -28,6 +39,72 @@ public class LoadDatabaseMetaDataCallable implements Callable<ExtendedDatabaseMe
         this.metadata = new ExtendedDatabaseMetaData(database);
     }
 
+    class X implements MigrationResolver {
+
+        @Override
+        public Collection<ResolvedMigration> resolveMigrations(Context context) {
+            return List.of();
+        }
+
+        @Override
+        public String getPrefix(Configuration configuration) {
+            return MigrationResolver.super.getPrefix(configuration);
+        }
+
+        @Override
+        public MigrationType getDefaultMigrationType() {
+            return MigrationResolver.super.getDefaultMigrationType();
+        }
+
+        @Override
+        public boolean isLicensed(Configuration configuration) {
+            return MigrationResolver.super.isLicensed(configuration);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return MigrationResolver.super.isEnabled();
+        }
+
+        @Override
+        public String getName() {
+            return MigrationResolver.super.getName();
+        }
+
+        @Override
+        public String getPluginVersion(Configuration config) {
+            return MigrationResolver.super.getPluginVersion(config);
+        }
+
+        @Override
+        public int getPriority() {
+            return MigrationResolver.super.getPriority();
+        }
+
+        @Override
+        public int compareTo(Plugin o) {
+            return MigrationResolver.super.compareTo(o);
+        }
+
+        @Override
+        public Plugin copy() {
+            return MigrationResolver.super.copy();
+        }
+    }
+
+    void initializeDatabase(JdbcDatabaseContainer<?> db) throws SQLException {
+        final FluentConfiguration conf = Flyway.configure().driver(db.getDriverClassName()).dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword());
+
+        // conf.resolvers(MigrationResolver);
+        final Flyway flyway = conf.load();
+        final MigrateResult results = flyway.migrate();
+        // note: if we see 'no database' check for 'flyway-database-x' dependency
+
+        if (!results.success) {
+            results.warnings.forEach(LOG::warn);
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -38,16 +115,27 @@ public class LoadDatabaseMetaDataCallable implements Callable<ExtendedDatabaseMe
 
             // start server
             db.start();
-            mdc1 = MDC.putCloseable("containerId", db.getContainerName());
+            try (MDC.MDCCloseable mdc2 = MDC.putCloseable("containerId", db.getContainerName())) {
 
-            metadata.setDriverClassName(db.getDriverClassName());
-            metadata.setDockerImageName(db.getDockerImageName());
+                metadata.setDriverClassName(db.getDriverClassName());
+                metadata.setDockerImageName(db.getDockerImageName());
 
-            // load metadata then shut down server
-            try (Connection conn = db.createConnection("")) {
-                metadata.loadMetadata(conn);
-            } finally {
-                db.stop();
+                if ("POSTGRESQL".equals(database.name())) {
+                    initializeDatabase(db);
+                    new ErdDotFileGenerator().writeERD(db, "/tmp/erd.dot");
+                }
+
+                // There is a 'db.createConnection(String)' method but there's no standard
+                // safe connection string and it's not a property associated with the testcontainer.
+                // So we need to use the driver insteadd.
+                final Properties connInfo = new Properties();
+                connInfo.put("user", db.getUsername());
+                connInfo.put("password", db.getPassword());
+                try (Connection conn = db.getJdbcDriverInstance().connect(db.getJdbcUrl(), connInfo)) {
+                    metadata.loadMetadata(conn);
+                } finally {
+                    db.stop();
+                }
             }
 
             return metadata;

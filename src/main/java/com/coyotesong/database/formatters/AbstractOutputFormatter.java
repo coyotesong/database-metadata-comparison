@@ -1,7 +1,10 @@
 package com.coyotesong.database.formatters;
 
 import com.coyotesong.database.DatabaseComparisons;
+import com.coyotesong.database.sql.ExtendedDatabaseMetaData;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.function.Predicate;
 
@@ -18,67 +21,6 @@ abstract public class AbstractOutputFormatter {
      */
     protected AbstractOutputFormatter(DatabaseComparisons databases) {
         this.databases = databases;
-    }
-
-    /**
-     * Create a table containing top-level summaries
-     *
-     * @return
-     */
-    abstract public String formatSummaryTable();
-
-    /**
-     * Create a table containing information about the docker images
-     *
-     * @return
-     */
-    abstract public String formatDockerImageTable();
-
-    /**
-     * Create a table containing information about the database driver classes.
-     *
-     * @return
-     */
-    abstract public String formatDriverTable();
-
-    abstract public String formatClientInfoProperties();
-
-    abstract public String formatCatalogSchemaSupport();
-
-    abstract public String formatSQLProperties();
-
-    abstract public String formatTableTypes();
-
-    abstract public String formatSqlKeywords();
-
-    /**
-     * Create a table header
-     *
-     * @return
-     */
-    abstract public String formatPropertyHeader();
-
-    /**
-     * Create a table line
-     */
-    abstract public String formatPropertyLine(String propertyName);
-
-    /**
-     * "Open" a table
-     *
-     * @return
-     */
-    public String openTable() {
-        return "";
-    }
-
-    /**
-     * "Close" a table
-     *
-     * @return
-     */
-    public String closeTable() {
-        return "";
     }
 
     /**
@@ -168,9 +110,10 @@ abstract public class AbstractOutputFormatter {
     /**
      * Create a table containing values that satisfy the predicate
      *
-     * @param predicate
+     *
      * @return
      */
+    /*
     public String formatPropertyTable(Predicate<String> predicate) {
         final StringBuilder sb = new StringBuilder();
 
@@ -187,4 +130,5 @@ abstract public class AbstractOutputFormatter {
 
         return sb.toString();
     }
+     */
 }

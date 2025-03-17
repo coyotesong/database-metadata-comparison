@@ -45,13 +45,13 @@ public enum Database {
     // TiDB
     // trino
     //
-    DB2("IBM DB2", Db2Container.class,
-            DockerImageName.parse("icr.io/db2_community/db2").asCompatibleSubstituteFor("ibmcom/db2").withTag("latest"),
-            List.of("LICENSE=accept")), // ports 22, 55000, 60006-60007  (db at 50000)
-    MSSQL("MSSQL", MSSQLServerContainer.class,
-            DockerImageName.parse("mcr.microsoft.com/mssql/server").withTag("latest"),
-            // DockerImageName.parse("mcr.microsoft.com/mssql/server").asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server").withTag("latest"),
-            List.of("ACCEPT_EULA=y")), // MSSQL_PID=... Developer, Express, Evaluation // no extra ports, db at 1433
+    // DB2("IBM DB2", Db2Container.class,
+    //         DockerImageName.parse("icr.io/db2_community/db2").asCompatibleSubstituteFor("ibmcom/db2").withTag("latest"),
+    //         List.of("LICENSE=accept")), // ports 22, 55000, 60006-60007  (db at 50000)
+    // MSSQL("MSSQL", MSSQLServerContainer.class,
+    //         DockerImageName.parse("mcr.microsoft.com/mssql/server").withTag("latest"),
+    //         // DockerImageName.parse("mcr.microsoft.com/mssql/server").asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server").withTag("latest"),
+    //         List.of("ACCEPT_EULA=y")), // MSSQL_PID=... Developer, Express, Evaluation // no extra ports, db at 1433
 
     // FIXME - why is this failing?
     // MYSQL("MySQL", MySQLContainer.class, DockerImageName.parse("mysql").withTag("latest")), // ports 33060, db at 3306
@@ -61,7 +61,7 @@ public enum Database {
     // VERTICA("Vertica CE", VerticaContainer.class, DockerImageName.parse("vertica/vertica-ce:latest")), // no extra ports, db at 5433, something at 5444
     // YUGABYTEDB("YugaByteDB", YugabyteDBYSQLContainer.class, DockerImageName.parse("yugabytedb/yugabyte:latest")), // ports 6379, 7100, 7200, 9042, 9100, 10100, 11000, 12000, db at 5433, 7000 or 9000 ?
     H2("H2", H2Container.class, DockerImageName.parse("alpine").withTag("latest")),  // no db port
-    SQLITE("SQLite", SQLiteContainer.class, DockerImageName.parse("alpine").withTag("latest")) // db at 8082
+    // SQLITE("SQLite", SQLiteContainer.class, DockerImageName.parse("alpine").withTag("latest")) // db at 8082
 
     // SAPHANA("SAP HANA Express", SapHanaContainer.class, DockerImageName.parse("saplabs/hanaexpress:2.00.061.00.20220519.1"))
     // SAPHANAXSA("SAP HANA Express XSA", SapHanaContainer.class, DockerImageName.parse("saplabs/hanaexpressxsa:2.00.061.00.20220519.1")),

@@ -83,11 +83,14 @@ public class H2Container<SELF extends H2Container<SELF>> extends JdbcDatabaseCon
 
     @Override
     public Connection createConnection(String queryString, Properties info) throws SQLException, NoDriverFoundException {
+      /*
         final Driver d = getJdbcDriverInstance();
         final String url = getJdbcUrl();
         LOG.info("driver: {}, url: {}", d.getClass().getName(), url);
 
         return d.connect(url, info);
+       */
+        return null;
     }
 
     @Override

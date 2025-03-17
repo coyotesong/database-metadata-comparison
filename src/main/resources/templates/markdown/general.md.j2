@@ -1,0 +1,121 @@
+{#
+Initial template, still a single large file.
+
+Current status:
+
+- general information - fully works
+
+- properties (limits, booleans, etc) - not started
+
+- functions, table types, etc. - creates proper table but does not yet populate the 'supports' columns
+
+- type info - creates proper table but still has large gaps when I try to filter out 1111 (custom)
+  and '2003' (very noisy postgresql type) from the table using jinja 'if' clauses. There's a second
+  way to do this in jinja, or it might require handling this in the java.
+
+  I haven't decided how to handle '1111' yet - it has the documented extensions.
+
+  I also haven't decided how to properly display all of the different details in each type.
+  Things like autoincrement, unsigned, nullable, etc. This means similar names may have
+  different behavior across databases.
+#}
+
+---
+# General Information
+
+## Databases Summary
+
+| Name | Version | SQL Grammar | Isolation | Holdability | RowID Lifetime | SQL State Type |
+|------|:-------:|:-----------:|:---------:|:-----------:|:--------------:|:--------------:|
+{% for db in databases -%}
+| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} | {{ db.sqlGrammar }} | {{ db.defaultTransactionIsolation }} | {{ db.resultSetHoldability }} | {{ db.rowIdLifetime }} | {{ db.sqlStateType }} |
+{% endfor %}
+
+## Drivers
+
+| Name | Version | Driver Classname | Maven Coordinates |
+|------|:-------:|:----------------:|:-----------------:|
+{% for db in databases -%}
+| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} | {{ db.driverClassName }} | {{ db.mavenCoordinates }} |
+{% endfor %}
+
+## Docker images
+
+| Name | Version | Docker Image Name |
+|------|:-------:|:-----------------:|
+{% for db in databases -%}
+| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} |  {{ db.dockerRepo }} |
+{% endfor %}
+
+## Additional Client Info Properties
+
+| Name | ClientInfo Properties |
+|------|-----------------------|
+{% for db in databases -%}
+| {{ db.databaseProductName }} | {{ db.clientInfoProperties | join(", ") }} |
+{% endfor %}
+
+
+## SQL Properties
+
+| Name | Version | Full Tablename | Procedure Term | Quote | Escape | Extra | Nulls Sort | Identifier | Quoted Identifier |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+{% for db in databases -%}
+| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} | {{ db.catSchemaTerm }} | {{ db.procedureTerm }} | {{ db.identifierQuoteString }} | {{ db.searchStringEscape }} | {{ db.extraNameCharacters }} | {{ db.nullSortPosition.label }} |  {{ db.identifierStorage }} | {{ db.quotedIdentifierStorage }} |
+{% endfor %}
+
+## Table Types
+
+|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
+|---|{% for db in databases %}:---:|{% endfor %}
+{% for type in databases.tableTypes -%}
+| {{ type }} |{% for database in databases %} - |{% endfor %}
+{% endfor %}
+
+## SQL Keywords
+
+|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
+|---|{% for db in databases %}:---:|{% endfor %}
+{% for keyword in databases.sqlKeywords -%}
+| {{ keyword }} |{% for database in databases %} - |{% endfor %}
+{% endfor %}
+
+## Numeric Functions
+
+|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
+|---|{% for db in databases %}:---:|{% endfor %}
+{% for function in databases.numericFunctions -%}
+| {{ function }} |{% for database in databases %} - |{% endfor %}
+{% endfor %}
+
+## String Functions
+
+|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
+|---|{% for db in databases %}:---:|{% endfor %}
+{% for function in databases.stringFunctions -%}
+| {{ function }} |{% for database in databases %} - |{% endfor %}
+{% endfor %}
+
+## System Functions
+
+|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
+|---|{% for db in databases %}:---:|{% endfor %}
+{% for function in databases.systemFunctions -%}
+| {{ function }} |{% for database in databases %} - |{% endfor %}
+{% endfor %}
+
+## Temporal Functions
+
+|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
+|---|{% for db in databases %}:---:|{% endfor %}
+{% for function in databases.temporalFunctions -%}
+| {{ function }} |{% for database in databases %} - |{% endfor %}
+{% endfor %}
+
+## Types
+
+|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
+|---|{% for db in databases %}:---:|{% endfor %}
+{% for type in databases.types -%}
+{% if not(type.type == 1111 or type.type == 2003) %}| {{ type.name }}({{ type.type }}) |{% for database in databases %} - |{% endfor %}{% endif %}
+{% endfor %}
