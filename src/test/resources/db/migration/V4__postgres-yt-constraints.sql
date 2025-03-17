@@ -8,6 +8,7 @@ alter table playlist add constraint playlist_channel_fkey foreign key (channel_i
 
 alter table playlist_item add constraint playlist_item_playlist_fkey foreign key (playlist_id) references playlist(id);
 alter table playlist_item add constraint playlist_item_channel_fkey foreign key (channel_id) references channel(id);
+alter table playlist_item add constraint playlist_item_video_fkey foreign key (video_id) references video(id);
 
 alter table video add constraint video_channel_fkey foreign key (channel_id) references channel(id);
 

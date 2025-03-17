@@ -5,8 +5,17 @@
 //
 // inspired by https://manchenkov.net/wordpress/2015/08/20/graphvis-dot-erds-network-diagrams/
 //
+// Definite improvements:
+//
+// - automatically identify cross-reference tables and use the appropriate symbol.
+// - split each column into two pieces. The first is a decorator indicating the type of key:
+//   PK (primary key), FK (foreign key), possibly U (unique). The second is the name and
+//   type, as now. TBD: how to handle columns when more than one of these conditions apply.
+// - emphasize non-null columns. Traditionally bold but we may need to use a different color here.
+//
 // Possible improvements:
-// - improve column description (non-null, primary and foreign keys, uniqueness, etc.)
+//
+// - improve column description beyond what's mentioned above?
 // - add indexes (beyond pk and fk)?
 // - add grouping?
 
@@ -42,6 +51,8 @@ digraph G {
 
     // <td port="_root", more???
     // <tooltip><...
+
+    // for cross-reference tables we should use '[shape=diamond, margin=0, ...'
 
     {% for table in schema.tables %}
     {{ table.tableName }}[label=<
