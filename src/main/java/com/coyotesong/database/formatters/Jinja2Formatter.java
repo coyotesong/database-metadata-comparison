@@ -1,21 +1,17 @@
 package com.coyotesong.database.formatters;
 
-import com.coyotesong.database.DatabaseComparisons;
-import com.coyotesong.database.config.ExternalRepositories;
+import com.coyotesong.database.Pivots;
 import com.hubspot.jinjava.Jinjava;
-import com.hubspot.jinjava.JinjavaConfig;
-import com.hubspot.jinjava.interpret.JinjavaInterpreter;
 import com.hubspot.jinjava.interpret.RenderResult;
 import com.hubspot.jinjava.interpret.TemplateError;
-import com.hubspot.jinjava.loader.ClasspathResourceLocator;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Implementation of OutputFormatter using Jinja2
@@ -26,84 +22,73 @@ import java.util.Map;
  * the existing code.
  * </p>
  * <p>
+ * You can avoid static methods via Guice injection. Something similar for
+ * spring? {@see https://github.com/HubSpot/jinjava/blob/master/src/main/java/com/hubspot/jinjava/lib/fn/InjectedContextFunctionProxy.java}
+ * </p>
+ * <p>
  * {@see https://product.hubspot.com/blog/jinjava-a-jinja-for-your-java}
  * </p>
  */
-public class Jinja2Formatter extends AbstractOutputFormatter {
+public class Jinja2Formatter {
     private static final Logger LOG = LoggerFactory.getLogger(Jinja2Formatter.class);
 
-    private final ExternalRepositories repos;
+    // private static final String HASHMARK = Character.toString(0x10102); // hash (X) mark
+    // private static final String CHECKMARK = Character.toString(0x1F5F8);
+    // private static final String BALLOT_BOX_WITH_BOLD_CHECKMARK = Character.toString(0x1F5F9);
+    private static final String BALLOT_BOX_WITH_CHECKMARK = Character.toString(0x2611);
 
-    public Jinja2Formatter(ExternalRepositories repos, DatabaseComparisons databases) {
-        super(databases);
-        this.repos = repos;
+    private final Pivots pivots;
+
+    public Jinja2Formatter(Pivots pivots) {
+        this.pivots = pivots;
     }
 
-    // for testing
-    protected Jinja2Formatter() {
-        super(new DatabaseComparisons());
-        this.repos = new ExternalRepositories();
-    }
+    /**
+     * Read contents from file in classpath
+     * <p>
+     * Jinjava can also load a file from the classpath but it also requires the 'interpreter'
+     * and does not provide the line separation we want for our error messages.
+     * </p>
+     * @param classpath classpath of text file
+     * @return list of strings containing contents of file
+     * @throws IOException
+     */
+    public List<String> readFromClasspath(String classpath) throws IOException {
+        // read from classpath
+        // we capture individual lines for better error reports
+        final List<String> lines = new ArrayList<>();
+        final URL url = Thread.currentThread().getContextClassLoader().getResource(classpath);
+        try (InputStream is = url.openStream();
+             BufferedInputStream bis = new BufferedInputStream(is);
+             Reader r = new InputStreamReader(bis, StandardCharsets.UTF_8);
+             BufferedReader br = new BufferedReader(r)) {
 
-    public void formatGeneral(PrintWriter pw) throws IOException {
-        ClasspathResourceLocator locator = new ClasspathResourceLocator();
-        JinjavaConfig config = new JinjavaConfig();
-
-        Jinjava jinjava = new Jinjava(config);
-        jinjava.setResourceLocator(locator);
-        JinjavaInterpreter interpreter = JinjavaInterpreter.getCurrent();
-
-        Map<String, Object> context = new HashMap<>();
-        context.put("databases", databases);
-
-        // FIXME - found other documentation saying this isn't necessary.
-        String template = locator.getString(
-                "templates/markdown/general.md.j2", StandardCharsets.UTF_8, interpreter);
-
-        RenderResult result = jinjava.renderForResult(template, context);
-
-        for (TemplateError error : result.getErrors()) {
-            LOG.warn("{}: line {}: {}", error.getSeverity(), error.getLineno(), error.getMessage());
+            br.lines().forEach(lines::add);
         }
-
-        String renderedTemplate = result.getOutput();
-        pw.print(renderedTemplate);
+        return lines;
     }
 
-    //
-    // The jinja engine can use user-provided static functions. The example given in
-    // the documentation is the java static method
-    //
-    //    public List[] Lists.newArrayList(Object... content);
-    //
-    // is registered as
-    //
-    //   jinjava.getGlobalContext().register(
-    //       new ELFunctionDefinition("fn", "list", Lists.class, "newArrayList", Object[].class));
-    //
-    // (where the 'Object[].class' is actually vargargs)
-    //
-    // and executed as
-    //
-    //    {% set mylist = fn:list() %}
-    //
-    // This means that we'll need to add static mmethods to 'DatabaseComparisons' and all that entails
-    //
-    // ------------------------------------------------------------
-    //
-    // Add'l information from http://www.javadoc.io/doc/com.hubspot.jinjava/jinjava
-    //
-    //  a 'tag' is something like '{% timestamp %}'
-    //  it implements com.hubspot.jinjava.lib.Tag
-    //
-    //     jinjava.getGlobalContext().registerTag(new MyCustomTag());
-    //
-    // a 'filter' is saomething like '| toLower'
-    //  it implements com.hubspot.jinjava.lib.Filter
-    //
-    //     jinjava.getGlobalContext().registerFilter(new MyAwesomeFilter());
-    //
-    //  // define any number of classes which extend Importable
-    //  jinjava.getGlobalContext().registerClasses(Class<? extends Importable>... classes);
-}
+    public String format(String templateName) throws IOException {
+        final Map<String, Object> context = new HashMap<>();
 
+        final String filename = "templates/" + templateName;
+        final List<String> lines = readFromClasspath(filename);
+        context.put("source", lines);
+
+        try (StringWriter sw = new StringWriter()) {
+            // note: won't work with multicharacter line separators. (Windows?)
+            final String template = Strings.join(lines, System.lineSeparator().charAt(0));
+
+            final Jinjava jinjava = JinjavaFactory.newInstance(pivots, CharacterEscape.MARKDOWN);
+            final RenderResult result = jinjava.renderForResult(template, context);
+
+            for (TemplateError error : result.getErrors()) {
+                // could also use 'error.getSourceTemplate().get()' and then call 'split'
+                LOG.warn("{}: line {}: {}: {}", error.getSeverity(), error.getLineno(), error.getMessage(), lines.get(error.getLineno()));
+            }
+
+            sw.write(result.getOutput());
+            return sw.toString();
+        }
+    }
+}

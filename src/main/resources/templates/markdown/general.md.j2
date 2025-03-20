@@ -18,104 +18,169 @@ Current status:
   I also haven't decided how to properly display all of the different details in each type.
   Things like autoincrement, unsigned, nullable, etc. This means similar names may have
   different behavior across databases.
+
+Possible improvement:
+
+- there are jinja templates - we could use this to replace the existing lines that create
+  the header and separator of tables ordered by database instead of property.
+
 #}
+
+{% macro table_for( propertyNames ) -%}
+|   |{% for db in fn:databaseLabels() %} {{ db }} |{% endfor %}
+|---|{% for db in fn:databaseLabels() %}:{{ fn:pad(db, "-") }}:|{% endfor %}
+{% for propertyName in propertyNames -%}
+| {{ propertyName }} |
+{%- for db in fn:databaseLabels() %} {{ fn:property(propertyName, db) }} | {% endfor %}
+{% endfor %}
+{%- endmacro -%}
+
+{% macro table_for_functions( functions ) -%}
+|   |{% for db in fn:databaseLabels() %} {{ db }} |{% endfor %}
+|---|{% for db in fn:databaseLabels() %}:{{ fn:pad(db, "-") }}:|{% endfor %}
+{% for function in functions -%}
+| {{ function }} |
+{%- for db in fn:databaseLabels() -%}
+{{ fn:functionSupported(function, db) }} |
+{%- endfor %}
+{% endfor %}
+{% endmacro %}
+
+## System Functions
 
 ---
 # General Information
 
+## Full product name and version
+
+| Name | Product | Version |
+|------|:-------:|:-------:|
+{% for db in fn:databaseLabels() %}| {{ db }} | {{ fn:databaseProductName(db) }} | {{ fn:databaseProductVersion(db) }} |
+{% endfor %}
+
 ## Databases Summary
 
-| Name | Version | SQL Grammar | Isolation | Holdability | RowID Lifetime | SQL State Type |
-|------|:-------:|:-----------:|:---------:|:-----------:|:--------------:|:--------------:|
-{% for db in databases -%}
-| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} | {{ db.sqlGrammar }} | {{ db.defaultTransactionIsolation }} | {{ db.resultSetHoldability }} | {{ db.rowIdLifetime }} | {{ db.sqlStateType }} |
+| Name | SQL Grammar | Isolation | Holdability | RowID Lifetime | SQL State Type |
+|------|:------------:|:------:|:-----------:|:---------:|:-----------:|:--------------:|:--------------:|
+{% for db in fn:databaseLabels() -%}
+| {{ db }} | {{ db.sqlGrammar }} | {{ db.defaultTransactionIsolation }} | {{ db.resultSetHoldability }} | {{ db.rowIdLifetime }} | {{ db.sqlStateType }} |
 {% endfor %}
 
 ## Drivers
 
-| Name | Version | Driver Classname | Maven Coordinates |
-|------|:-------:|:----------------:|:-----------------:|
-{% for db in databases -%}
-| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} | {{ db.driverClassName }} | {{ db.mavenCoordinates }} |
+| Name | Driver Classname | Maven Coordinates |
+|------|:----------------:|:-----------------:|
+{% for db in fn:databaseLabels() %}| {{ db }} | {{ fn:driverClassname(db) }} | {{ fn:mavenCoordinates(db) }} |
 {% endfor %}
 
 ## Docker images
 
-| Name | Version | Docker Image Name |
-|------|:-------:|:-----------------:|
-{% for db in databases -%}
-| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} |  {{ db.dockerRepo }} |
+| Name | Docker Image Name |
+|------|:-----------------:|
+{% for db in fn:databaseLabels() %}| {{ db }} | {{ fn:dockerRepo(db) }} |
 {% endfor %}
 
 ## Additional Client Info Properties
 
 | Name | ClientInfo Properties |
 |------|-----------------------|
-{% for db in databases -%}
-| {{ db.databaseProductName }} | {{ db.clientInfoProperties | join(", ") }} |
+{% for db in fn:databaseLabels() %}| {{ db }} | {{ fn:clientInfoProperties(db) | join(", ") }} |
 {% endfor %}
 
 
 ## SQL Properties
 
 | Name | Version | Full Tablename | Procedure Term | Quote | Escape | Extra | Nulls Sort | Identifier | Quoted Identifier |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-{% for db in databases -%}
-| {{ db.databaseProductName }} | {{ db.databaseMajorVersion }} | {{ db.catSchemaTerm }} | {{ db.procedureTerm }} | {{ db.identifierQuoteString }} | {{ db.searchStringEscape }} | {{ db.extraNameCharacters }} | {{ db.nullSortPosition.label }} |  {{ db.identifierStorage }} | {{ db.quotedIdentifierStorage }} |
+{# | {{ db.databaseMajorVersion }} | {{ db.catSchemaTerm }} | {{ db.procedureTerm }} | {{ db.identifierQuoteString }} | {{ db.searchStringEscape }} | {{ db.extraNameCharacters }} | {{ db.nullSortPosition }} |  {{ db.identifierStorage }} | {{ db.quotedIdentifierStorage }} | #}
+
+## SQL Properties
+|   |{% for db in fn:databaseLabels() %} {{ db }} |{% endfor %}
+|---|{% for db in fn:databaseLabels() %}:---:|{% endfor %}
+{% for property in fn:sqlProperties() -%}
+| {{ property }} | {%- for db in fn:databaseLabels() %} {{ fn:property(property, db) }} |{% endfor %}
 {% endfor %}
 
 ## Table Types
 
-|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
-|---|{% for db in databases %}:---:|{% endfor %}
-{% for type in databases.tableTypes -%}
-| {{ type }} |{% for database in databases %} - |{% endfor %}
+|   |{% for db in fn:databaseLabels() %} {{ db }} |{% endfor %}
+|---|{% for db in fn:databaseLabels() %}:{{ fn:pad(db, "-") }}:|{% endfor %}
+{% for type in fn:tableTypes() -%}
+| {{ type }} | {%-for db in fn:databaseLabels() %} {{ fn:isTableTypeSupported(type, db) }} |{% endfor %}
 {% endfor %}
+
+## DDL Methods
+
+{{ table_for( fn:propertyNames() | isDdlMethod ) }}
+
+## DML Methods
+
+{{ table_for( fn:propertyNames() | isDmlMethod ) }}
+
+## Limits
+
+{{ table_for( fn:propertyNames() | isLimitProperty ) }}
+
+## Boolean Properties
+
+{{ table_for( fn:propertyNames() | isBooleanProperty ) }}
+
+## Transaction Methods
+
+{{ table_for( fn:propertyNames() | isTransactionsMethod ) }}
+
+## Stored Procedure Methods
+
+{{ table_for( fn:propertyNames() | isStoredProceduresMethod ) }}
+
+## Other Methods
+
+{{ table_for( fn:propertyNames() | isOtherMethod ) }}
 
 ## SQL Keywords
 
-|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
-|---|{% for db in databases %}:---:|{% endfor %}
-{% for keyword in databases.sqlKeywords -%}
-| {{ keyword }} |{% for database in databases %} - |{% endfor %}
+|   |{% for db in fn:databaseLabels() %} {{ db }} |{% endfor %}
+|---|{% for db in fn:databaseLabels() %}:{{ fn:pad(db, "-") }}:|{% endfor %}
+{% for keyword in fn:sqlKeywords() -%}
+| {{ keyword }} |
+{%- for db in fn:databaseLabels() -%}
+{{ fn:isSqlKeywordSupported(keyword, db) }} |
+{%- endfor %}
 {% endfor %}
 
 ## Numeric Functions
 
-|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
-|---|{% for db in databases %}:---:|{% endfor %}
-{% for function in databases.numericFunctions -%}
-| {{ function }} |{% for database in databases %} - |{% endfor %}
-{% endfor %}
+{{ table_for_functions(fn:numericFunctions()) }}
 
 ## String Functions
 
-|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
-|---|{% for db in databases %}:---:|{% endfor %}
-{% for function in databases.stringFunctions -%}
-| {{ function }} |{% for database in databases %} - |{% endfor %}
-{% endfor %}
+{{ table_for_functions(fn:stringFunctions()) }}
 
 ## System Functions
 
-|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
-|---|{% for db in databases %}:---:|{% endfor %}
-{% for function in databases.systemFunctions -%}
-| {{ function }} |{% for database in databases %} - |{% endfor %}
-{% endfor %}
+{{ table_for_functions(fn:systemFunctions()) }}
 
 ## Temporal Functions
 
-|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
-|---|{% for db in databases %}:---:|{% endfor %}
-{% for function in databases.temporalFunctions -%}
-| {{ function }} |{% for database in databases %} - |{% endfor %}
+{{ table_for_functions(fn:temporalFunctions()) }}
+
+## All functions and properties
+
+|   |{% for db in fn:databaseLabels() %} {{ db }} |{% endfor %}
+|---|{% for db in fn:databaseLabels() %}:{{ fn:pad(db, "-") }}:|{% endfor %}
+{% for property in fn:propertyNames() -%}
+| {{ name }} |
+{%- for db in fn:databaseLabels() -%}
+{{ fn:property(name, db) }} |
+{%- endfor %}
 {% endfor %}
 
+{#-
 ## Types
 
-|   | {% for database in databases %}{{ database.databaseProductName }} |{% endfor %}
-|---|{% for db in databases %}:---:|{% endfor %}
+|   |{% for db in fn:databaseLabels() %} {{ db }} |{% endfor %}
+|---|{% for db in fn:databaseLabels() %}:{{ fn:pad(db, "-") }}:|{% endfor %}
 {% for type in databases.types -%}
 {% if not(type.type == 1111 or type.type == 2003) %}| {{ type.name }}({{ type.type }}) |{% for database in databases %} - |{% endfor %}{% endif %}
 {% endfor %}
+
+-#}

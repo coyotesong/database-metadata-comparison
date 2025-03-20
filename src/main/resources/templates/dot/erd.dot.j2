@@ -65,6 +65,17 @@ digraph G {
 
    {% endfor %}
 
+    {% for table in schema.xrefTables %}
+    {{ table.tableName }}[shape=diamond, margin=0, label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue">{{ table.tableName }}</td></tr>
+            {% for column in table.columns %}<tr><td>{{ column.columnName }} ({{ column.typeName }})</td></tr>
+            {% endfor %}
+        </table>
+    >]
+
+   {% endfor %}
+
    // list foreign keys
    // from: https://erdantic.drivendata.org/stable/examples/dataclasses/
    // arrowhead and tail may be nonenone, nonteeodot, noneteetee crownone, more?

@@ -13,6 +13,11 @@ public record SchemaInfoRecord(String schemaName, List<TableInfoRecord> tables) 
     }
 
     public List<TableInfoRecord> getTables() {
-        return tables;
+        return tables.stream().filter(s -> !s.getTableName().endsWith("_xref")).toList();
+    }
+
+    // this is very simplisitic - first cut!
+    public List<TableInfoRecord> getXrefTables() {
+        return tables.stream().filter(s -> s.getTableName().endsWith("_xref")).toList();
     }
 }

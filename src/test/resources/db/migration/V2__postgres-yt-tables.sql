@@ -1,4 +1,19 @@
 --
+-- YouTube client model (for caching results)
+--
+-- The tables can be grouped as follows:
+--
+-- - Primary - anything with an 'etag' value. This directly refers to an API call.
+--
+-- - Secondary - anything directly related to a primary table via a one-to-one or
+--   one-to-many relationship. (Not many-to-many - handled separately.
+--
+
+-- ------------------------------------------------------------
+-- Primary tables
+-- ------------------------------------------------------------
+
+--
 -- Channel
 --
 create table channel
@@ -10,13 +25,13 @@ create table channel
     description   text,
     content_owner text,          -- always null ?
     uploads       text not null, -- always 'playlist_id' ?
-    published_at  timestamp(0) without time zone,
+    published_at  timestamp(0) with time zone,
     tn_url        text,          -- https://yt3.ggpht.com/...
     country       text,
     lang          text,
+    privacy       text,
 
     constraint channel_pkey primary key (id)
-    -- constraint channel_etag_key unique(etag)
 );
 
 --
@@ -28,14 +43,13 @@ create table playlist
     etag          text not null,
     channel_id    text not null,
     channel_title text,
-    published_at  timestamp(0) without time zone,
+    published_at  timestamp(0) with time zone,
     tn_url        text, -- https://i.ytimg.com/vi/...
     lang          text,
+    embed_html    text,
     -- thumbnail_video_id text = always null?
 
     constraint playlist_pkey primary key (id)
-    -- constraint playlist_etag_key unique(etag)
-    -- constraint playlist_channel_fkey foreign key (channel_id) references channel(id)
 );
 
 --
@@ -53,13 +67,12 @@ create table playlist_item
     note               text,          -- always null ?
     tn_url             text,          -- https://i.ytimg.com/vi/...
     owner_channel_id   text,          -- ever different from channel_id?
-    published_at       timestamp(0) without time zone,
-    video_published_at timestamp(0) without time zone,
+    published_at       timestamp(0) with time zone,
+    video_published_at timestamp(0) with time zone,
     position           int4,
     kind               text,          -- always 'youtube#video' ?
 
     constraint playlist_item_pkey primary key (id)
-    -- constraint etag_key unique(etag)
     -- constraint playlist_item_playlist_fkey foreign key (playlist_id) references playlist(id)
     -- constraint playlist_item_channel_fkey foreign key (channel_id) references channel(id)
 );
@@ -76,7 +89,7 @@ create table video
     title               text,
     description         text,
     lang                text,
-    published_at        timestamp(0) without time zone,
+    published_at        timestamp(0) with time zone,
     channel_title       text,
     embed_html          text,
     -- embed_height  int4 = 270
@@ -105,39 +118,45 @@ create table video
     constraint video_pkey primary key (id)
 );
 
--- only videos support multiple thumbnail sizes
-create table video_thumbnail
+-- note: the 'channel_id' is always "UCBR8-60-B28hp2BmDPdntcQ" (AFAIK)
+create table video_category
 (
-    video_id   text not null,
-    name       text not null, -- 'default', 'medium', 'high', 'standard', 'maxres'
-    url        text not null,
-    -- height     int4,
-    -- width      int4
+    id          serial not null,
+    category_id int4   not null,
+    etag        text   not null,
+    title       text,
+    assignable  boolean,
+    country     text,
+    lang        text,
 
-    constraint video_thumbnail_pkey primary key (video_id, name)
-    -- constraint video_thumbnail_video_id_fkey foreign key (video_id) references video(id)
+    constraint video_category_pkey primary key (id)
 );
 
--- mostly for reference...
-create table thumbnail_size
-(
-    name   text not null, -- 'default', 'medium', 'high', 'standard', 'maxres'
-    height int4 not null,
-    width  int4 not null,
-    constraint thumbnail_size_pkey primary key (name)
-);
-
-create table channel_categories
-(
-    channel_id text not null,
-    category   text
-);
+-- ------------------------------------------------------------
+-- Secondary tables
+-- ------------------------------------------------------------
 
 create table tags
 (
     video_id text not null,
     tag      text not null,
     original text not null
+);
+
+-- optimization
+create table video_topic_deref
+(
+    video_id text not null,
+    category text
+);
+
+-- ------------------------------------------------------------
+-- Pre-initialized tables
+-- ------------------------------------------------------------
+create table category
+(
+    category_id integer not null,
+    description text
 );
 
 -- aka 'topic category'
@@ -151,25 +170,82 @@ create table topic
     constraint topic_pkey primary key (id)
 );
 
--- note: the 'channel_id' is always "UCBR8-60-B28hp2BmDPdntcQ" (AFAIK)
-create table video_category
+-- mostly for reference...
+create table thumbnail_size
 (
-    id          serial not null,
-    category_id int4   not null,
-    etag        text   not null,
-    title       text,
-    assignable  boolean,
-    country     text,
-    lang        text,
+    name   text not null, -- 'default', 'medium', 'high', 'standard', 'maxres'
+    height int4 not null,
+    width  int4 not null,
 
-    constraint video_category_pkey primary key (id),
-    constraint video_category_category_id_key unique (category_id)
-    -- constraint video_category_etag_key unique(etag)
+    constraint thumbnail_size_pkey primary key (name)
 );
 
--- cross-reference table
-create table video_topic
+-- ------------------------------------------------------------
+-- Cross-reference tables
+-- ------------------------------------------------------------
+
+create table channel_topic_xref
+(
+    channel_id  text not null,
+    topic_id    int4 not null
+);
+
+create table video_topic_xref
 (
     video_id text not null,
     topic_id int4 not null
+);
+
+-- ------------------------------------------------------------
+-- thumbnails - may be outdated...
+-- ------------------------------------------------------------
+create table channel_thumbnail
+(
+    channel_id text not null,
+    name       text not null,
+    url        text not null,
+    height     integer,
+    width      integer
+);
+
+create table playlist_thumbnail
+(
+    playlist_id text not null,
+    name        text not null,
+    url         text not null,
+    height      integer,
+    width       integer
+);
+
+create table playlist_item_thumbnail
+(
+    playlist_item_id text not null,
+    name             text not null,
+    url              text not null,
+    height           integer,
+    width            integer
+);
+
+-- only videos support multiple thumbnail sizes
+create table video_thumbnail
+(
+    video_id   text not null,
+    name       text not null, -- 'default', 'medium', 'high', 'standard', 'maxres'
+    url        text not null,
+    -- height     int4,
+    -- width      int4
+
+    constraint video_thumbnail_pkey primary key (video_id, name)
+);
+
+-- ------------------------------------------------------------
+-- Other
+-- ------------------------------------------------------------
+create table chrome_history
+(
+    video_id        text         not null,
+    title           text,
+    visit_count     integer      not null,
+    typed_count     integer      not null,
+    last_visit_time timestamp(3) not null
 );

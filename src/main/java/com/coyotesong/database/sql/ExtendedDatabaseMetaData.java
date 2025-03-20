@@ -90,6 +90,10 @@ public class ExtendedDatabaseMetaData {
         return database;
     }
 
+    public String getLabel() {
+        return database.getLabel();
+    }
+
     public String getDatabaseProductName() {
         return databaseProductName;
     }

@@ -1,7 +1,5 @@
 package com.coyotesong.database;
 
-import com.coyotesong.database.sql.*;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,54 +8,27 @@ import java.util.*;
 /**
  * Merged database information
  */
-public class DatabaseComparisons implements Iterable<ExtendedDatabaseMetaData> {
+public class DatabaseComparisons { // implements Iterable<ExtendedDatabaseMetaData> {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseComparisons.class);
 
-    private final Map<Database, ExtendedDatabaseMetaData> databases = new LinkedHashMap<>();
-
-    private final List<String> propertyNames = new ArrayList<>();
-
-    private final Map<String, MergedPropertyValues> mergedProperties = new LinkedHashMap<>();
-
     private final Pivots pivots = new Pivots();
-
 
     /**
      * Initialize the cached data
      */
-    public void initialize() {
-        final DatabaseScanner databaseScanner = new DatabaseScanner(databases);
-        databaseScanner.scanDatabases();
-
-        for (ExtendedDatabaseMetaData md : databases.values()) {
-            pivots.addDatabase(md);
-        }
-
-        final Set<String> keySet = new HashSet<>();
-        for (ExtendedDatabaseMetaData md : databases.values()) {
-            keySet.addAll(md.keySet());
-        }
-
-        // sort property keys (for convenience)
-        // propertyNames.addAll(MetadataMethods.INSTANCE.getPropertyNames());
-        propertyNames.clear();
-        propertyNames.addAll(keySet);
-        Collections.sort(propertyNames);
-
-        // pivot the collected data
-        for (String propertyName : propertyNames) {
-            mergedProperties.put(propertyName, new MergedPropertyValues(propertyName, databases));
-        }
+    public Pivots initialize() {
+        final DatabaseScanner databaseScanner = new DatabaseScanner();
+        pivots.initialize(databaseScanner.scanDatabases());
+        return pivots;
     }
 
+    /*
     public List<String> getPropertyNames() {
-        return propertyNames;
+        return pivots.getPropertyNames();
     }
+     */
 
-    public ExtendedDatabaseMetaData getMetadata(Database database) {
-        return databases.get(database);
-    }
-
+    /*
     public List<String> getTableTypes() {
         return pivots.getTableTypes();
     }
@@ -65,11 +36,16 @@ public class DatabaseComparisons implements Iterable<ExtendedDatabaseMetaData> {
     public List<String> getSqlKeywords() {
         return pivots.getSqlKeywords();
     }
+    *
+     */
 
+    /*
     public List<String> getNumericFunctions() {
         return pivots.getNumericFunctions();
     }
+     */
 
+    /*
     public List<String> getStringFunctions() {
         return pivots.getStringFunctions();
     }
@@ -81,14 +57,13 @@ public class DatabaseComparisons implements Iterable<ExtendedDatabaseMetaData> {
     public List<String> getTemporalFunctions() {
         return pivots.getTemporalFunctions();
     }
+     */
 
+    /*
     public List<TypeInfo> getTypes() {
-        return pivots.getTypes();
+        return pivots.getDataTypes();
     }
-
-    public Collection<ExtendedDatabaseMetaData> values() {
-        return databases.values();
-    }
+    */
 
     public boolean isDmlProperty(String key) {
         return MetadataMethods.INSTANCE.isDmlMethod(key);
@@ -107,23 +82,26 @@ public class DatabaseComparisons implements Iterable<ExtendedDatabaseMetaData> {
     }
 
     public boolean isLimitProperty(String key) {
-        return MetadataMethods.INSTANCE.isLimitMethod(key);
+        return MetadataMethods.INSTANCE.isLimitProperty(key);
     }
 
     public boolean isBooleanProperty(String key) {
-        return MetadataMethods.INSTANCE.isBooleanMethod(key);
+        return MetadataMethods.INSTANCE.isBooleanProperty(key);
     }
 
     public boolean isOtherProperty(String key) {
         return MetadataMethods.INSTANCE.isOtherMethod(key);
     }
 
-    public Set<Map.Entry<Database, ExtendedDatabaseMetaData>> entrySet() {
-        return databases.entrySet();
-    }
+    // public Set<Map.Entry<Database, ExtendedDatabaseMetaData>> entrySet() {
+    //    return databases.entrySet();
+    //}
 
+
+    /*
     @NotNull
     public Iterator<ExtendedDatabaseMetaData> iterator() {
-        return databases.values().iterator();
+        return pivots.iterator();
     }
+     */
 }

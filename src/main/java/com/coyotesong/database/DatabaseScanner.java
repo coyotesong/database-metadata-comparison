@@ -17,16 +17,12 @@ import java.util.concurrent.*;
 public class DatabaseScanner {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseScanner.class);
 
-    private final Map<Database, ExtendedDatabaseMetaData> databases; //  = new LinkedHashMap<>();
-
-    public DatabaseScanner(Map<Database, ExtendedDatabaseMetaData> databases) {
-        this.databases = databases;
-    }
+    final Map<Database, ExtendedDatabaseMetaData> databases = new LinkedHashMap<>();
 
     /**
      * Collect information about each database (multithreaded)
      */
-    public void scanDatabases() {
+    public Map<Database, ExtendedDatabaseMetaData> scanDatabases() {
         final int poolSize = 4;
         final int maxPoolSize = 6;
         final int keepAliveTime = 10;
@@ -86,6 +82,8 @@ public class DatabaseScanner {
                 handleInterruptedException(futures);
             }
         }
+
+        return databases;
     }
 
     /**

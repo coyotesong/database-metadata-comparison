@@ -166,6 +166,15 @@ public class MetadataMethods {
             "supportsStoredFunctionsUsingCallSyntax"
     );
 
+    private static final List<String> SQL_PROPERTIES_LIST = List.of(
+
+            "getCatalogTerm",
+            "getClientInfoProperties",
+            "getExtraNameCharacters",
+            "getIdentifierQuoteString",
+            "getSchemaTerm",
+            "getSearchStringEscape"
+    );
 
     static {
         // Initialize with standard methods
@@ -173,8 +182,8 @@ public class MetadataMethods {
     }
 
     private final CatalogSchemaSupport catalogSchemaSupport = new CatalogSchemaSupport();
-    private final Set<String> booleanMethods = new HashSet<>();
-    private final Set<String> limitMethods = new HashSet<>();
+    private final Set<String> booleanProperties = new HashSet<>();
+    private final Set<String> limitProperties = new HashSet<>();
     private final Set<String> resultSetMethods = new HashSet<>();
     private final Set<String> catalogSchemaSupportMethods = new HashSet<>();
     private final Set<String> ddlMethods = new HashSet<>();
@@ -204,7 +213,7 @@ public class MetadataMethods {
             }
 
             if (name.startsWith("getMax")) {
-                limitMethods.add(name);
+                limitProperties.add(name);
             } else if (ResultSet.class.isAssignableFrom(returnType)) {
                 resultSetMethods.add(name);
             } else if (name.startsWith("supportsCatalogs") || name.startsWith("supportsSchemas")) {
@@ -218,7 +227,7 @@ public class MetadataMethods {
             } else if (STORED_PROCEDURE_METHODS_LIST.contains(name)) {
                 storedProceduresMethods.add(name);
             } else if (Boolean.class.equals(returnType) || Boolean.TYPE.equals(returnType)) {
-                booleanMethods.add(name);
+                booleanProperties.add(name);
             } else {
                 otherMethods.add(name);
             }
@@ -241,19 +250,50 @@ public class MetadataMethods {
 
     public List<String> getPropertyNames() {
         final List<String> names = new ArrayList<>();
-        names.addAll(limitMethods);
+        names.addAll(limitProperties);
         names.addAll(ddlMethods);
         names.addAll(dmlMethods);
         names.addAll(transactionsMethods);
         names.addAll(storedProceduresMethods);
-        names.addAll(booleanMethods);
+        names.addAll(booleanProperties);
         names.addAll(otherMethods);
         Collections.sort(names);
         return names;
     }
 
-    public boolean isBooleanMethod(String name) {
-        return booleanMethods.contains(name);
+    /*
+    public CatalogSchemaSupport getCatalogSchemaSupport() {
+        return catalogSchemaSupport;
+    }
+
+    public Set<String> getNumericFunctions() {
+        return numericFunctions;
+    }
+
+    public Set<String> getSqlKeywords() {
+        return sqlKeywords;
+    }
+
+    public Set<String> getStringFunctions() {
+
+        return stringFunctions;
+    }
+
+    public Set<String> getSystemFunctions() {
+        return systemFunctions;
+    }
+
+    public Set<String> getTemporalFunctions() {
+        return temporalFunctions;
+    }
+    */
+
+    public boolean isBooleanProperty(String name) {
+        return booleanProperties.contains(name);
+    }
+
+    public boolean isLimitProperty(String name) {
+        return limitProperties.contains(name);
     }
 
     public boolean isOtherMethod(String name) {
@@ -262,10 +302,6 @@ public class MetadataMethods {
 
     public boolean isResultSetMethod(String name) {
         return resultSetMethods.contains(name);
-    }
-
-    public boolean isLimitMethod(String name) {
-        return limitMethods.contains(name);
     }
 
     public boolean isSupportCatalogSchemaMethod(String name) {
@@ -293,12 +329,12 @@ public class MetadataMethods {
              PrintWriter pw = new PrintWriter(w)) {
 
             pw.printf("MetadataMethods stats\n");
-            pw.printf(" - limits:  %4d\n", limitMethods.size());
+            pw.printf(" - limits:  %4d\n", limitProperties.size());
             pw.printf(" - ddl:     %4d\n", ddlMethods.size());
             pw.printf(" - dml:     %4d\n", dmlMethods.size());
             pw.printf(" - tx:      %4d\n", transactionsMethods.size());
             pw.printf(" - sp:      %4d\n", storedProceduresMethods.size());
-            pw.printf(" - boolean: %4d\n", booleanMethods.size());
+            pw.printf(" - boolean: %4d\n", booleanProperties.size());
             pw.printf(" - other:   %4d\n", otherMethods.size());
             pw.flush();
             return w.toString();

@@ -1,3 +1,35 @@
+-- create view channel_categories_view(channel_id, categories, cardinality, title, custom_url) as
+-- WITH s AS (SELECT c_1.channel_id,
+--                   array_agg(tc.label) AS categories
+--            FROM channel c_1
+--                     JOIN channel_topic_categories t ON c_1.channel_id = t.channel_id
+--                     JOIN topic_categories tc ON t.topic_category_id = tc.id
+--            GROUP BY c_1.channel_id)
+-- SELECT s.channel_id,
+--        s.categories,
+--        cardinality(s.categories) AS cardinality,
+--        c.title,
+--        c.custom_url
+-- FROM s
+--          JOIN channel c ON c.channel_id = s.channel_id;
+--
+-- create view video_categories_view(video_id, categories, cardinality, title, channel_title) as
+-- WITH s AS (SELECT v_1.video_id,
+--                   array_agg(tc.label) AS categories
+--            FROM video v_1
+--                     JOIN video_topic_categories t ON v_1.video_id = t.video_id
+--                     JOIN topic_categories tc ON t.topic_category_id = tc.id
+--            GROUP BY v_1.video_id)
+-- SELECT s.video_id,
+--        s.categories,
+--        cardinality(s.categories) AS cardinality,
+--        v.title,
+--        v.channel_title
+-- FROM s
+--          JOIN video v ON v.video_id = s.video_id;
+
+
+
 -- create view channel_categories_view as
 --    with s as (select c.channel_id, array_agg(tc.label) as categories from channel as c join channel_topic_categories t on (c.channel_id = t.channel_id) join topic_categories tc on (t.topic_category_id = tc.id) group by c.channel_id)
 --    select s.*, cardinality(s.categories) as cardinality, c.title, c.custom_url from s join channel c on (c.channel_id = s.channel_id);
